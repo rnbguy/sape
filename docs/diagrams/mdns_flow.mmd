@@ -1,0 +1,18 @@
+sequenceDiagram
+    participant D as Dialer
+    participant L as Listener
+
+    L-->>D: listen
+    Note over L: sape listen
+    Note over D: sape dial /mdns/LISTENER_PEER_ID
+
+    Note over L: Bind TCP + QUIC (random ports)
+    Note over D: Bind TCP + QUIC (random ports)
+    Note over L: mDNS advertises PeerID on LAN
+    D->>L: mDNS multicast discovery
+    D->>L: Dial discovered address (TCP or QUIC)
+    D->>L: Noise handshake (direct, single hop)
+    Note over D,L: ConnectionEstablished
+    D->>L: Open /sape/tunnel/1.0.0 stream
+    D->>L: Send TunnelRequest (Netcat / -L / -R / -D)
+    Note over D,L: Tunnel active (same as relay flows, minus relay hop)

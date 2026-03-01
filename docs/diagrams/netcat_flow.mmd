@@ -1,0 +1,19 @@
+sequenceDiagram
+    participant D as Dialer
+    participant R as Relay
+    participant L as Listener
+
+    L-->>R: listen
+    Note over R: sape relay --port 4001
+    Note over L: sape listen --relay-address RELAY_ADDR
+    Note over D: sape dial TARGET
+
+    D->>R: Connect (Noise-encrypted)
+    R->>L: Forward circuit
+    D->>L: Open /sape/tunnel/1.0.0 stream
+    D->>L: Send TunnelRequest::Netcat
+    Note over D: Bridge stdin → stream
+    Note over L: Bridge stdin → stream
+    D->>L: stdin bytes (encrypted)
+    L->>D: stdin bytes (encrypted)
+    Note over L,D: Bidirectional stdin/stdout until EOF

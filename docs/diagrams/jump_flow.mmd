@@ -1,0 +1,21 @@
+sequenceDiagram
+    participant D as Dialer
+    participant H1 as Hop1
+    participant HN as HopN
+    participant L as Listener
+
+    L-->>HN: listen
+    Note over H1: sape relay --port 4001
+    Note over HN: sape relay --port 4001
+    Note over L: sape listen --relay-address RELAY_ADDR
+    Note over D: sape dial -J HOP1 -J HOP2 TARGET
+
+    D->>H1: Open /sape/jump/1.0.0 stream
+    D->>H1: Send JumpChain [hop2..hopN, listener]
+    H1->>HN: Open /sape/jump/1.0.0 stream
+    H1->>HN: Send JumpChain [hopN+1.., listener]
+    HN->>L: Open /sape/tunnel/1.0.0 stream
+    HN->>H1: Return JumpResult::Ok
+    H1->>D: Return JumpResult::Ok
+    D->>L: Send TunnelRequest::Netcat (on chained stream)
+    Note over L,D: Bidirectional netcat over chained relay path

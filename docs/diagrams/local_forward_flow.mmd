@@ -1,0 +1,20 @@
+sequenceDiagram
+    participant A as App
+    participant D as Dialer
+    participant R as Relay
+    participant L as Listener
+    participant T as Target
+
+    L-->>R: listen
+    Note over R: sape relay --port 4001
+    Note over L: sape listen --relay-address RELAY_ADDR
+    Note over D: sape dial -L BIND:HOST:PORT TARGET
+
+    Note over D: Bind 127.0.0.1:BIND_PORT
+    A->>D: Connect TCP BIND_PORT
+    D->>R: Connect (Noise-encrypted)
+    R->>L: Forward circuit
+    D->>L: Open /sape/tunnel/1.0.0 stream
+    D->>L: Send TunnelRequest::LocalForward(HOST:PORT)
+    L->>T: Connect TCP HOST:PORT
+    Note over A,T: Bidirectional copy: App ↔ Dialer ↔ Relay ↔ Listener ↔ Target
