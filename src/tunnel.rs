@@ -40,7 +40,9 @@ pub async fn read_tunnel_request(stream: &mut Stream) -> io::Result<TunnelReques
 pub async fn write_tunnel_request(stream: &mut Stream, req: &TunnelRequest) -> io::Result<()> {
     let bytes = postcard::to_allocvec(req)
         .map_err(|err| io::Error::new(io::ErrorKind::InvalidData, err.to_string()))?;
-    let len = (bytes.len() as u32).to_be_bytes();
+    let len = u32::try_from(bytes.len())
+        .map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e))?
+        .to_be_bytes();
     stream.write_all(&len).await?;
     stream.write_all(&bytes).await?;
     stream.flush().await

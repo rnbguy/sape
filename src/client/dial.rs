@@ -38,7 +38,7 @@ pub async fn run_dial(
             },
         };
 
-        let mut hops: Vec<String> = opt.jump[1..].iter().map(|a| a.to_string()).collect();
+        let mut hops: Vec<String> = opt.jump[1..].iter().map(|s| s.to_string()).collect();
         hops.push(target_addr_str);
 
         let first_jump = &opt.jump[0];

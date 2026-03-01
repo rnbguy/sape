@@ -22,7 +22,9 @@ pub async fn send_reverse_ack(stream: &mut Stream, result: Result<(), String>) -
         Err(reason) => {
             stream.write_all(&[REVERSE_FAILED]).await?;
             let bytes = reason.as_bytes();
-            let len = (bytes.len() as u16).to_be_bytes();
+            let len = u16::try_from(bytes.len())
+                .map_err(|_| io::Error::new(io::ErrorKind::InvalidData, "reverse error too long"))?
+                .to_be_bytes();
             stream.write_all(&len).await?;
             stream.write_all(bytes).await?;
         },

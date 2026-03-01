@@ -30,6 +30,7 @@ const WORDS: [&str; 256] = [
     "marble", "nimbus", "zephyr",
 ];
 
+#[must_use]
 pub fn generate_code() -> String {
     let mut rng = rand::thread_rng();
     let number = rng.gen_range(0..100);
@@ -38,6 +39,7 @@ pub fn generate_code() -> String {
     format!("{number}-{word1}-{word2}")
 }
 
+#[must_use]
 pub fn is_pairing_code(s: &str) -> bool {
     let mut parts = s.split('-');
     let Some(number_part) = parts.next() else {

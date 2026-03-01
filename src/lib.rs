@@ -12,6 +12,7 @@ pub mod types;
 
 use clap::Parser;
 pub use cli::*;
+use cli::{Cli as CliArgs, Command as CliCommand};
 use color_eyre::eyre::Result;
 use tracing::info;
 use tracing_subscriber::EnvFilter;
@@ -44,17 +45,13 @@ pub async fn run() -> Result<()> {
     let jump_proto = protocol::jump_protocol(&namespace);
     info!(%namespace, "using protocol namespace");
 
-    let command = cli::Cli::parse()
+    let command = CliArgs::parse()
         .command
         .map_or_else(interactive::run_interactive, Ok)?;
 
     match command {
-        cli::Command::Relay(opt) => {
-            relay::run_relay(opt, tunnel_proto, jump_proto, &namespace).await
-        },
-        cli::Command::Listen(opt) => client::run_listen(opt, tunnel_proto, &namespace).await,
-        cli::Command::Dial(opt) => {
-            client::run_dial(opt, tunnel_proto, jump_proto, &namespace).await
-        },
+        CliCommand::Relay(opt) => relay::run_relay(opt, tunnel_proto, jump_proto, &namespace).await,
+        CliCommand::Listen(opt) => client::run_listen(opt, tunnel_proto, &namespace).await,
+        CliCommand::Dial(opt) => client::run_dial(opt, tunnel_proto, jump_proto, &namespace).await,
     }
 }

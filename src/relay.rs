@@ -13,7 +13,7 @@ use tokio::sync::mpsc;
 use tokio_util::compat::FuturesAsyncReadCompatExt;
 use tracing::{info, warn};
 
-use crate::{RelayOpt, jump, peer_id_from_multiaddr, resolve_identity};
+use crate::{RelayOpt, jump, peer_id_from_multiaddr, protocol, resolve_identity};
 
 enum SwarmCommand {
     Dial(Multiaddr),
@@ -53,11 +53,8 @@ pub async fn run_relay(
             relay: relay::Behaviour::new(key.public().to_peer_id(), relay::Config::default()),
             ping: ping::Behaviour::new(ping::Config::new()),
             identify: identify::Behaviour::new(
-                identify::Config::new(
-                    crate::protocol::relay_identify_protocol(namespace),
-                    key.public(),
-                )
-                .with_agent_version(format!("sape/{}", env!("CARGO_PKG_VERSION"))),
+                identify::Config::new(protocol::relay_identify_protocol(namespace), key.public())
+                    .with_agent_version(format!("sape/{}", env!("CARGO_PKG_VERSION"))),
             ),
             rendezvous: rendezvous::server::Behaviour::new(rendezvous::server::Config::default()),
             autonat: autonat::v2::server::Behaviour::default(),
@@ -226,7 +223,7 @@ async fn handle_jump_request(
     };
 
     let mut outbound = None;
-    for attempt in 0..10 {
+    for attempt in 0_u64..10 {
         match open_control
             .open_stream(next_peer, outbound_protocol.clone())
             .await
@@ -236,7 +233,7 @@ async fn handle_jump_request(
                 break;
             },
             Err(_) if attempt < 9 => {
-                tokio::time::sleep(Duration::from_millis(500 * (attempt + 1) as u64)).await;
+                tokio::time::sleep(Duration::from_millis(500 * (attempt + 1))).await;
             },
             Err(err) => {
                 let error_msg = format!("failed to connect to hop {next_peer}: {err}");

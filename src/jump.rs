@@ -35,7 +35,9 @@ pub async fn read_jump_chain(stream: &mut Stream) -> io::Result<JumpChain> {
 pub async fn write_jump_chain(stream: &mut Stream, chain: &JumpChain) -> io::Result<()> {
     let bytes = postcard::to_allocvec(chain)
         .map_err(|err| io::Error::new(io::ErrorKind::InvalidData, err.to_string()))?;
-    let len = (bytes.len() as u32).to_be_bytes();
+    let len = u32::try_from(bytes.len())
+        .map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e))?
+        .to_be_bytes();
     stream.write_all(&len).await?;
     stream.write_all(&bytes).await?;
     stream.flush().await
@@ -60,7 +62,9 @@ pub async fn read_jump_result(stream: &mut Stream) -> io::Result<JumpResult> {
 pub async fn write_jump_result(stream: &mut Stream, result: &JumpResult) -> io::Result<()> {
     let bytes = postcard::to_allocvec(result)
         .map_err(|err| io::Error::new(io::ErrorKind::InvalidData, err.to_string()))?;
-    let len = (bytes.len() as u32).to_be_bytes();
+    let len = u32::try_from(bytes.len())
+        .map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e))?
+        .to_be_bytes();
     stream.write_all(&len).await?;
     stream.write_all(&bytes).await?;
     stream.flush().await

@@ -6,8 +6,9 @@ use libp2p_stream as p2pstream;
 use rand::rngs::OsRng;
 
 use super::ClientBehaviour;
+use crate::protocol;
 
-pub(crate) async fn build_client_swarm(
+pub async fn build_client_swarm(
     keypair: libp2p::identity::Keypair,
     namespace: &str,
 ) -> Result<libp2p::Swarm<ClientBehaviour>> {
@@ -31,7 +32,7 @@ pub(crate) async fn build_client_swarm(
             ),
             identify: identify::Behaviour::new(
                 identify::Config::new(
-                    crate::protocol::client_identify_protocol(namespace),
+                    protocol::client_identify_protocol(namespace),
                     keypair.public(),
                 )
                 .with_agent_version(format!("sape/{}", env!("CARGO_PKG_VERSION"))),
@@ -53,7 +54,7 @@ pub(crate) async fn build_client_swarm(
     Ok(swarm)
 }
 
-pub(crate) fn start_listeners(swarm: &mut libp2p::Swarm<ClientBehaviour>) -> Result<()> {
+pub fn start_listeners(swarm: &mut libp2p::Swarm<ClientBehaviour>) -> Result<()> {
     swarm.listen_on("/ip4/0.0.0.0/tcp/0".parse()?)?;
     swarm.listen_on("/ip4/0.0.0.0/udp/0/quic-v1".parse()?)?;
     Ok(())

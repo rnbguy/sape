@@ -5,20 +5,24 @@ pub const TUNNEL_PROTOCOL_VERSION: &str = "1.0.0";
 pub const JUMP_PROTOCOL_VERSION: &str = "1.0.0";
 pub const IDENTIFY_VERSION: &str = "0.1.0";
 
+#[must_use]
 pub fn tunnel_protocol(namespace: &str) -> StreamProtocol {
     StreamProtocol::try_from_owned(format!("/{namespace}/tunnel/{TUNNEL_PROTOCOL_VERSION}"))
         .expect("valid protocol string")
 }
 
+#[must_use]
 pub fn jump_protocol(namespace: &str) -> StreamProtocol {
     StreamProtocol::try_from_owned(format!("/{namespace}/jump/{JUMP_PROTOCOL_VERSION}"))
         .expect("valid protocol string")
 }
 
+#[must_use]
 pub fn relay_identify_protocol(namespace: &str) -> String {
     format!("/{namespace}-relay/{IDENTIFY_VERSION}")
 }
 
+#[must_use]
 pub fn client_identify_protocol(namespace: &str) -> String {
     format!("/{namespace}-client/{IDENTIFY_VERSION}")
 }

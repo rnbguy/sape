@@ -13,7 +13,7 @@ use super::{ClientBehaviour, ClientBehaviourEvent};
 const RELAY_CONNECT_TIMEOUT: Duration = Duration::from_secs(30);
 const PEER_DIAL_TIMEOUT: Duration = Duration::from_secs(30);
 
-pub(crate) async fn connect_and_identify(
+pub async fn connect_and_identify(
     swarm: &mut libp2p::Swarm<ClientBehaviour>,
     relay_address: &Multiaddr,
 ) -> Result<()> {
@@ -61,7 +61,7 @@ pub(crate) async fn connect_and_identify(
     Ok(())
 }
 
-pub(crate) async fn wait_for_peer_connection(
+pub async fn wait_for_peer_connection(
     swarm: &mut libp2p::Swarm<ClientBehaviour>,
     expected_peer: PeerId,
 ) -> Result<()> {
@@ -94,7 +94,7 @@ pub(crate) async fn wait_for_peer_connection(
     .map_err(|_| eyre!("peer dial timed out after 30s"))?
 }
 
-pub(crate) fn log_mdns_event(event: &mdns::Event) {
+pub fn log_mdns_event(event: &mdns::Event) {
     match event {
         mdns::Event::Discovered(peers) => {
             for (peer_id, addr) in peers {
@@ -109,7 +109,7 @@ pub(crate) fn log_mdns_event(event: &mdns::Event) {
     }
 }
 
-pub(crate) async fn wait_for_mdns_and_connect(
+pub async fn wait_for_mdns_and_connect(
     swarm: &mut libp2p::Swarm<ClientBehaviour>,
     expected_peer: PeerId,
 ) -> Result<()> {
@@ -148,7 +148,7 @@ pub(crate) async fn wait_for_mdns_and_connect(
     }
 }
 
-pub(crate) async fn wait_for_rendezvous_discovery(
+pub async fn wait_for_rendezvous_discovery(
     swarm: &mut libp2p::Swarm<ClientBehaviour>,
     rendezvous_point: PeerId,
 ) -> Result<PeerId> {
@@ -218,7 +218,7 @@ pub(crate) async fn wait_for_rendezvous_discovery(
     .map_err(|_| eyre!("rendezvous discovery timed out after 30s"))?
 }
 
-pub(crate) async fn drive_client_swarm(mut swarm: libp2p::Swarm<ClientBehaviour>) -> Result<()> {
+pub async fn drive_client_swarm(mut swarm: libp2p::Swarm<ClientBehaviour>) -> Result<()> {
     loop {
         let Some(event) = swarm.next().await else {
             bail!("client swarm stream ended unexpectedly");
@@ -285,7 +285,7 @@ pub(crate) async fn drive_client_swarm(mut swarm: libp2p::Swarm<ClientBehaviour>
                 } => {
                     warn!(?namespace, ?error, %rendezvous_node, "rendezvous discovery failed");
                 },
-                other => {
+                other @ rendezvous::client::Event::Expired { .. } => {
                     info!(?other, "rendezvous client event");
                 },
             },
@@ -295,7 +295,6 @@ pub(crate) async fn drive_client_swarm(mut swarm: libp2p::Swarm<ClientBehaviour>
             SwarmEvent::Behaviour(ClientBehaviourEvent::Upnp(event)) => {
                 info!(?event, "upnp event");
             },
-            SwarmEvent::Behaviour(ClientBehaviourEvent::Ping(_)) => {},
             SwarmEvent::OutgoingConnectionError { peer_id, error, .. } => {
                 warn!(?peer_id, %error, "outgoing connection error");
             },

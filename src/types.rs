@@ -3,7 +3,7 @@ use std::str::FromStr;
 use std::{fmt, fs};
 
 use libp2p::core::multiaddr::{Multiaddr, Protocol};
-use libp2p::{PeerId, identity};
+use libp2p::{PeerId, identity, multiaddr};
 
 use crate::pairing;
 
@@ -45,6 +45,7 @@ pub enum ForwardSpecError {
 // Keypair helpers
 // ---------------------------------------------------------------------------
 
+#[must_use]
 pub fn generate_ed25519(secret_key_seed: u8) -> identity::Keypair {
     let mut bytes = [0u8; 32];
     bytes[0] = secret_key_seed;
@@ -74,11 +75,10 @@ pub fn resolve_identity(
     identity_file: Option<&Path>,
     secret_key_seed: Option<u8>,
 ) -> Result<identity::Keypair, std::io::Error> {
-    if let Some(path) = identity_file {
-        load_or_create_identity(path)
-    } else {
-        Ok(resolve_keypair(secret_key_seed))
-    }
+    identity_file.map_or_else(
+        || Ok(resolve_keypair(secret_key_seed)),
+        load_or_create_identity,
+    )
 }
 
 // ---------------------------------------------------------------------------
@@ -91,7 +91,7 @@ pub fn validate_relay_address(addr: &Multiaddr) -> Result<(), AddressError> {
     let mut has_udp = false;
     let mut has_quic_v1 = false;
 
-    for protocol in addr.iter() {
+    for protocol in addr {
         match protocol {
             Protocol::P2p(_) => has_p2p = true,
             Protocol::Tcp(_) => has_tcp = true,
@@ -119,7 +119,7 @@ pub fn relay_base_from_circuit_address(
     let mut seen_circuit = false;
     let mut remote_peer = None;
 
-    for protocol in addr.iter() {
+    for protocol in addr {
         if !seen_circuit {
             if matches!(protocol, Protocol::P2pCircuit) {
                 seen_circuit = true;
@@ -143,6 +143,7 @@ pub fn relay_base_from_circuit_address(
     Ok((relay_base, remote_peer))
 }
 
+#[must_use]
 pub fn peer_id_from_multiaddr(addr: &Multiaddr) -> Option<PeerId> {
     addr.iter().find_map(|protocol| match protocol {
         Protocol::P2p(peer_id) => Some(peer_id),
@@ -175,9 +176,9 @@ impl FromStr for DialTarget {
             return Ok(Self::Mdns(peer_id));
         }
 
-        let addr: Multiaddr = s.parse().map_err(|e: libp2p::multiaddr::Error| {
-            DialTargetError::InvalidMultiaddr(e.to_string())
-        })?;
+        let addr: Multiaddr = s
+            .parse()
+            .map_err(|e: multiaddr::Error| DialTargetError::InvalidMultiaddr(e.to_string()))?;
         Ok(Self::RelayCircuit(addr))
     }
 }
@@ -225,9 +226,7 @@ mod tests {
 
     #[test]
     fn dial_target_mdns_valid() {
-        let peer_id = libp2p::identity::Keypair::generate_ed25519()
-            .public()
-            .to_peer_id();
+        let peer_id = identity::Keypair::generate_ed25519().public().to_peer_id();
         let input = format!("/mdns/{peer_id}");
         let target = DialTarget::from_str(&input).expect("mdns target should parse");
         assert!(matches!(target, DialTarget::Mdns(id) if id == peer_id));
@@ -240,12 +239,8 @@ mod tests {
 
     #[test]
     fn dial_target_relay_circuit() {
-        let peer1 = libp2p::identity::Keypair::generate_ed25519()
-            .public()
-            .to_peer_id();
-        let peer2 = libp2p::identity::Keypair::generate_ed25519()
-            .public()
-            .to_peer_id();
+        let peer1 = identity::Keypair::generate_ed25519().public().to_peer_id();
+        let peer2 = identity::Keypair::generate_ed25519().public().to_peer_id();
         let addr = format!("/ip4/1.2.3.4/tcp/4001/p2p/{peer1}/p2p-circuit/p2p/{peer2}");
         let target = DialTarget::from_str(&addr).expect("circuit target should parse");
         assert!(matches!(target, DialTarget::RelayCircuit(_)));
@@ -290,9 +285,7 @@ mod tests {
 
     #[test]
     fn validate_relay_address_tcp() {
-        let peer = libp2p::identity::Keypair::generate_ed25519()
-            .public()
-            .to_peer_id();
+        let peer = identity::Keypair::generate_ed25519().public().to_peer_id();
         let addr: Multiaddr = format!("/ip4/1.2.3.4/tcp/4001/p2p/{peer}")
             .parse()
             .expect("valid tcp relay address");
@@ -301,9 +294,7 @@ mod tests {
 
     #[test]
     fn validate_relay_address_quic() {
-        let peer = libp2p::identity::Keypair::generate_ed25519()
-            .public()
-            .to_peer_id();
+        let peer = identity::Keypair::generate_ed25519().public().to_peer_id();
         let addr: Multiaddr = format!("/ip4/1.2.3.4/udp/4001/quic-v1/p2p/{peer}")
             .parse()
             .expect("valid quic relay address");
@@ -318,9 +309,7 @@ mod tests {
 
     #[test]
     fn validate_relay_address_no_transport() {
-        let peer = libp2p::identity::Keypair::generate_ed25519()
-            .public()
-            .to_peer_id();
+        let peer = identity::Keypair::generate_ed25519().public().to_peer_id();
         let addr: Multiaddr = format!("/ip4/1.2.3.4/p2p/{peer}")
             .parse()
             .expect("valid multiaddr");
@@ -329,12 +318,8 @@ mod tests {
 
     #[test]
     fn relay_base_from_circuit_valid() {
-        let relay_peer = libp2p::identity::Keypair::generate_ed25519()
-            .public()
-            .to_peer_id();
-        let target_peer = libp2p::identity::Keypair::generate_ed25519()
-            .public()
-            .to_peer_id();
+        let relay_peer = identity::Keypair::generate_ed25519().public().to_peer_id();
+        let target_peer = identity::Keypair::generate_ed25519().public().to_peer_id();
         let addr: Multiaddr =
             format!("/ip4/1.2.3.4/tcp/4001/p2p/{relay_peer}/p2p-circuit/p2p/{target_peer}")
                 .parse()
@@ -349,9 +334,7 @@ mod tests {
 
     #[test]
     fn relay_base_from_circuit_missing_circuit() {
-        let peer = libp2p::identity::Keypair::generate_ed25519()
-            .public()
-            .to_peer_id();
+        let peer = identity::Keypair::generate_ed25519().public().to_peer_id();
         let addr: Multiaddr = format!("/ip4/1.2.3.4/tcp/4001/p2p/{peer}")
             .parse()
             .expect("valid relay address");
@@ -360,9 +343,7 @@ mod tests {
 
     #[test]
     fn peer_id_from_multiaddr_present() {
-        let peer = libp2p::identity::Keypair::generate_ed25519()
-            .public()
-            .to_peer_id();
+        let peer = identity::Keypair::generate_ed25519().public().to_peer_id();
         let addr: Multiaddr = format!("/ip4/1.2.3.4/tcp/4001/p2p/{peer}")
             .parse()
             .expect("valid relay address");

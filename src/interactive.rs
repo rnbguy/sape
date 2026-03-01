@@ -53,9 +53,9 @@ enum Mode {
 impl fmt::Display for Mode {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Mode::Relay => write!(f, "Relay — run a circuit relay server"),
-            Mode::Listen => write!(f, "Listen — register on relay, accept tunnels"),
-            Mode::Dial => write!(f, "Dial — connect to listener, start tunnel"),
+            Self::Relay => write!(f, "Relay -- run a circuit relay server"),
+            Self::Listen => write!(f, "Listen -- register on relay, accept tunnels"),
+            Self::Dial => write!(f, "Dial -- connect to listener, start tunnel"),
         }
     }
 }
@@ -69,8 +69,8 @@ enum ListenConn {
 impl fmt::Display for ListenConn {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            ListenConn::Relay => write!(f, "Relay (remote) — use a relay for NAT traversal"),
-            ListenConn::Lan => write!(f, "LAN only (mDNS) — local network discovery only"),
+            Self::Relay => write!(f, "Relay (remote) -- use a relay for NAT traversal"),
+            Self::Lan => write!(f, "LAN only (mDNS) -- local network discovery only"),
         }
     }
 }
@@ -85,14 +85,14 @@ enum DialConn {
 impl fmt::Display for DialConn {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            DialConn::Relay => write!(
+            Self::Relay => write!(
                 f,
-                "Relay circuit address — dial full relay circuit multiaddr"
+                "Relay circuit address -- dial full relay circuit multiaddr"
             ),
-            DialConn::Mdns => write!(f, "mDNS (LAN) — dial by peer id on local network"),
-            DialConn::Pairing => write!(
+            Self::Mdns => write!(f, "mDNS (LAN) -- dial by peer id on local network"),
+            Self::Pairing => write!(
                 f,
-                "Pairing code — dial using pairing code plus relay address"
+                "Pairing code -- dial using pairing code plus relay address"
             ),
         }
     }
@@ -109,18 +109,18 @@ enum TunnelMode {
 impl fmt::Display for TunnelMode {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            TunnelMode::Netcat => write!(f, "Netcat (default) — interactive stdin/stdout stream"),
-            TunnelMode::Local => write!(
+            Self::Netcat => write!(f, "Netcat (default) -- interactive stdin/stdout stream"),
+            Self::Local => write!(
                 f,
-                "Local forward (-L) — expose local port and forward remotely"
+                "Local forward (-L) -- expose local port and forward remotely"
             ),
-            TunnelMode::Reverse => write!(
+            Self::Reverse => write!(
                 f,
-                "Reverse forward (-R) — expose remote port and forward locally"
+                "Reverse forward (-R) -- expose remote port and forward locally"
             ),
-            TunnelMode::Socks => write!(
+            Self::Socks => write!(
                 f,
-                "SOCKS5 proxy (-D) — start local SOCKS5/HTTP CONNECT proxy"
+                "SOCKS5 proxy (-D) -- start local SOCKS5/HTTP CONNECT proxy"
             ),
         }
     }
@@ -296,10 +296,9 @@ fn run_dial() -> Result<cli::Command, InquireError> {
                 .with_placeholder("12D3KooWH3uVF6wv47WnArKHk5p6cvgCJEb74UTmxztmQDc298L3")
                 .with_autocomplete(
                     |input: &str| -> Result<Vec<String>, Box<dyn std::error::Error + Send + Sync>> {
-                        Ok(["12D3KooW"]
-                            .iter()
+                        Ok(std::iter::once("12D3KooW")
                             .filter(|s| s.starts_with(input))
-                            .map(|s| s.to_string())
+                            .map(ToString::to_string)
                             .collect())
                     },
                 )
