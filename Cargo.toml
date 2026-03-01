@@ -1,21 +1,64 @@
 [package]
-name = "sape"
-version = "0.1.0"
-edition = "2024"
+name         = "sape"
+version      = "0.1.0"
+edition      = "2024"
+rust-version = "1.93.1"
 
 [dependencies]
-clap = { version = "4.5", features = ["derive"] }
-color-eyre = { version = "0.6" }
-inquire = { version = "0.7" }
-fast-socks5 = { version = "1.0" }
-futures = { version = "0.3" }
-libp2p = { version = "0.56", features = ["autonat", "dcutr", "dns", "identify", "macros", "mdns", "noise", "ping", "quic", "relay", "rendezvous", "tcp", "tokio", "upnp", "websocket", "yamux"] }
-libp2p-stream = { version = "0.4.0-alpha" }
-postcard = { version = "1.1", features = ["alloc"] }
-rand = { version = "0.8" }
-serde = { version = "1", features = ["derive"] }
-thiserror = { version = "2" }
-tokio = { version = "1.44", features = ["io-std", "io-util", "macros", "net", "rt-multi-thread", "signal", "time"] }
-tokio-util = { version = "0.7", features = ["compat"] }
-tracing = { version = "0.1" }
-tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+clap               = { version = "4.5", features = [ "derive" ] }
+color-eyre         = { version = "0.6" }
+inquire            = { version = "0.7" }
+fast-socks5        = { version = "1.0" }
+futures            = { version = "0.3" }
+libp2p             = { version = "0.56", features = [ "autonat", "dcutr", "dns", "identify", "macros", "mdns", "noise", "ping", "quic", "relay", "rendezvous", "tcp", "tokio", "upnp", "websocket", "yamux" ] }
+libp2p-stream      = { version = "0.4.0-alpha" }
+postcard           = { version = "1.1", features = [ "alloc" ] }
+rand               = { version = "0.8" }
+serde              = { version = "1", features = [ "derive" ] }
+thiserror          = { version = "2" }
+tokio              = { version = "1.44", features = [ "io-std", "io-util", "macros", "net", "rt-multi-thread", "signal", "time" ] }
+tokio-util         = { version = "0.7", features = [ "compat" ] }
+tracing            = { version = "0.1" }
+tracing-subscriber = { version = "0.3", features = [ "env-filter" ] }
+
+
+[lints.rust]
+unused_qualifications = "allow"
+
+[lints.clippy]
+all      = { level = "warn", priority = -1 }
+nursery  = { level = "warn", priority = -1 }
+cargo    = { level = "warn", priority = -1 }
+pedantic = { level = "warn", priority = -1 }
+# --- allowed (standard) ---
+module_name_repetitions        = "allow"
+mod_module_files               = "allow"
+exhaustive_structs             = "allow"
+exhaustive_enums               = "allow"
+missing_inline_in_public_items = "allow"
+implicit_return                = "allow"
+missing_trait_methods          = "allow"
+multiple_crate_versions        = "allow"
+# --- allowed (tighten later) ---
+missing_errors_doc                 = "allow"
+missing_panics_doc                 = "allow"
+cargo_common_metadata              = "allow"
+too_many_lines                     = "allow"
+cast_possible_truncation           = "allow"
+cast_sign_loss                     = "allow"
+redundant_pub_crate                = "allow"
+missing_const_for_fn               = "allow"
+use_self                           = "allow"
+must_use_candidate                 = "allow"
+redundant_closure_for_method_calls = "allow"
+explicit_iter_loop                 = "allow"
+option_if_let_else                 = "allow"
+match_wildcard_for_single_variants = "allow"
+match_same_arms                    = "allow"
+iter_on_single_items               = "allow"
+
+[profile.release]
+lto           = true
+codegen-units = 1
+strip         = true
+panic         = "abort"
