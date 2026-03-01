@@ -1,4 +1,4 @@
-use rand::Rng;
+use rand::RngExt;
 
 const WORDS: [&str; 256] = [
     "acorn", "adapt", "adobe", "agent", "agile", "amber", "anchor", "apple", "april", "arrow",
@@ -32,10 +32,10 @@ const WORDS: [&str; 256] = [
 
 #[must_use]
 pub fn generate_code() -> String {
-    let mut rng = rand::thread_rng();
-    let number = rng.gen_range(0..100);
-    let word1 = WORDS[rng.gen_range(0..WORDS.len())];
-    let word2 = WORDS[rng.gen_range(0..WORDS.len())];
+    let mut rng = rand::rng();
+    let number = rng.random_range(0..100);
+    let word1 = WORDS[rng.random_range(0..WORDS.len())];
+    let word2 = WORDS[rng.random_range(0..WORDS.len())];
     format!("{number}-{word1}-{word2}")
 }
 

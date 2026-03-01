@@ -3,7 +3,6 @@ use std::time::Duration;
 use color_eyre::eyre::Result;
 use libp2p::{autonat, identify, mdns, noise, ping, rendezvous, tcp, upnp, yamux};
 use libp2p_stream as p2pstream;
-use rand::rngs::OsRng;
 
 use super::ClientBehaviour;
 use crate::protocol;
@@ -42,10 +41,7 @@ pub async fn build_client_swarm(
             mdns: mdns::tokio::Behaviour::new(mdns::Config::default(), peer_id)
                 .expect("mDNS behaviour creation failed"),
             rendezvous: rendezvous::client::Behaviour::new(keypair.clone()),
-            autonat: autonat::v2::client::Behaviour::new(
-                OsRng,
-                autonat::v2::client::Config::default(),
-            ),
+            autonat: autonat::v2::client::Behaviour::default(),
             upnp: upnp::tokio::Behaviour::default(),
         })?
         .with_swarm_config(|config| config.with_idle_connection_timeout(Duration::from_secs(120)))
