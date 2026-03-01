@@ -1,0 +1,51 @@
+services:
+  relay:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: sape-relay
+    environment:
+      RUST_LOG: info
+      SAPE_NAMESPACE: sape
+    command: ["relay", "--secret-key-seed", "1", "--port", "4001"]
+    ports:
+      - "4001:4001/tcp"
+      - "4001:4001/udp"
+
+  listener:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: sape-listener
+    depends_on:
+      - relay
+    environment:
+      RUST_LOG: info
+      SAPE_NAMESPACE: sape
+    command:
+      [
+        "listen",
+        "--secret-key-seed",
+        "2",
+        "--relay-address",
+        "/dns4/relay/tcp/4001/p2p/12D3KooWPjceQrSwdWXPyLLeABRXmuqt69Rg3sBYbU1Nft9HyQ6X"
+      ]
+
+  dialer:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: sape-dialer
+    depends_on:
+      - relay
+      - listener
+    environment:
+      RUST_LOG: info
+      SAPE_NAMESPACE: sape
+    command:
+      [
+        "dial",
+        "--secret-key-seed",
+        "3",
+        "/dns4/relay/tcp/4001/p2p/12D3KooWPjceQrSwdWXPyLLeABRXmuqt69Rg3sBYbU1Nft9HyQ6X/p2p-circuit/p2p/12D3KooWH3uVF6wv47WnArKHk5p6cvgCJEb74UTmxztmQDc298L3"
+      ]
