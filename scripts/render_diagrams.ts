@@ -1,6 +1,6 @@
 #!/usr/bin/env -S deno run -A
-import { renderMermaidAscii } from "npm:beautiful-mermaid";
-import { basename, join } from "jsr:@std/path";
+import { renderMermaidAscii } from "beautiful-mermaid";
+import { basename, join } from "@std/path";
 
 const DIAGRAMS_DIR = new URL("../docs/diagrams", import.meta.url).pathname;
 

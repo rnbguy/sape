@@ -1,4 +1,4 @@
-import { assert } from "jsr:@std/assert";
+import { assert } from "@std/assert";
 import { DIALER_SEED, LISTENER_PEER_ID, LISTENER_SEED } from "./constants.ts";
 import {
   dockerLogs,
