@@ -1,0 +1,20 @@
+# Rust build artifacts
+target/
+
+# Git history
+.git/
+
+# Distribution artifacts
+dist/
+
+# AI agent state
+.sisyphus/
+.opencode/
+
+# Environment / secrets
+.env
+.env.*
+!.env.example
+
+# Logs
+*.log

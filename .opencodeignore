@@ -1,0 +1,7 @@
+target/
+.git/
+*.log
+.env
+.env.*
+dist/
+.sisyphus/
