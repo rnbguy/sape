@@ -1,0 +1,63 @@
+{
+  "imports": {
+    "@david/dax": "jsr:@david/dax@^0.45.0",
+    "husky": "npm:husky@^9"
+  },
+  "tasks": {
+    "build:arm64": "deno run -A scripts/build_arm64.ts",
+    // Render .mmd diagrams to ASCII .txt via beautiful-mermaid
+    "docs:diagrams": "deno run -A scripts/render_diagrams.ts",
+    // Build the Docker image used by all e2e tests
+    "e2e:build": "deno run -A tests/e2e_setup.ts build",
+    // Setup: build image + create network + disable IGMP snooping
+    "e2e:setup": "deno run -A tests/e2e_setup.ts setup",
+    // Teardown: remove network and containers
+    "e2e:teardown": "deno run -A tests/e2e_setup.ts teardown",
+    // Individual test suites
+    "e2e:mdns-netcat": {
+      "command": "deno test -A tests/mdns_netcat_test.ts",
+      "dependencies": ["e2e:setup"]
+    },
+    "e2e:relay-netcat": {
+      "command": "deno test -A tests/relay_netcat_test.ts",
+      "dependencies": ["e2e:setup"]
+    },
+    "e2e:mdns-forward": {
+      "command": "deno test -A tests/mdns_forward_test.ts",
+      "dependencies": ["e2e:setup"]
+    },
+    "e2e:relay-forward": {
+      "command": "deno test -A tests/relay_forward_test.ts",
+      "dependencies": ["e2e:setup"]
+    },
+    "e2e:relay-reverse-forward": {
+      "command": "deno test -A tests/relay_reverse_forward_test.ts",
+      "dependencies": ["e2e:setup"]
+    },
+    "e2e:mdns-reverse-forward": {
+      "command": "deno test -A tests/mdns_reverse_forward_test.ts",
+      "dependencies": ["e2e:setup"]
+    },
+    "e2e:relay-socks5": {
+      "command": "deno test -A tests/relay_socks5_test.ts",
+      "dependencies": ["e2e:setup"]
+    },
+    "e2e:relay-pairing-code": {
+      "command": "deno test -A tests/relay_pairing_code_test.ts",
+      "dependencies": ["e2e:setup"]
+    },
+    "e2e:relay-http-connect": {
+      "command": "deno test -A tests/relay_http_connect_test.ts",
+      "dependencies": ["e2e:setup"]
+    },
+    "e2e:mdns-socks5": {
+      "command": "deno test -A tests/mdns_socks5_test.ts",
+      "dependencies": ["e2e:setup"]
+    },
+    // Run all e2e tests sequentially (shared Docker state)
+    "e2e": {
+      "command": "deno test -A --no-check tests/",
+      "dependencies": ["e2e:setup"]
+    }
+  }
+}
