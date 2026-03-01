@@ -1,9 +1,16 @@
 {
+  "exclude": [".sisyphus", ".opencode", "target", "coverage", "node_modules"],
   "imports": {
     "@david/dax": "jsr:@david/dax@^0.45.0",
     "husky": "npm:husky@^9"
   },
   "tasks": {
+    "prepare": "deno run -A npm:husky",
+    "deno:fmt": "deno fmt --check",
+    "deno:lint": "deno lint",
+    "deno:ci": {
+      "dependencies": ["deno:fmt", "deno:lint"]
+    },
     "build:arm64": "deno run -A scripts/build_arm64.ts",
     // Render .mmd diagrams to ASCII .txt via beautiful-mermaid
     "docs:diagrams": "deno run -A scripts/render_diagrams.ts",
