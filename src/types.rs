@@ -1,6 +1,6 @@
+use std::fs;
 use std::path::Path;
 use std::str::FromStr;
-use std::{fmt, fs};
 
 use libp2p::core::multiaddr::{Multiaddr, Protocol};
 use libp2p::{PeerId, identity, multiaddr};
@@ -183,7 +183,8 @@ impl FromStr for DialTarget {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, derive_more::Display)]
+#[display("{bind_port}:{target}")]
 pub struct ForwardSpec {
     pub bind_port: u16,
     pub target: String,
@@ -209,12 +210,6 @@ impl FromStr for ForwardSpec {
             bind_port,
             target: target.to_string(),
         })
-    }
-}
-
-impl fmt::Display for ForwardSpec {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}:{}", self.bind_port, self.target)
     }
 }
 

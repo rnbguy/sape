@@ -1,4 +1,3 @@
-use std::fmt;
 use std::str::FromStr;
 
 use color_eyre::eyre::Result;
@@ -43,87 +42,44 @@ fn prefix_suggest(
 // ── Mode enums
 // ────────────────────────────────────────────────────────────────
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, derive_more::Display)]
 enum Mode {
+    #[display("Relay -- run a circuit relay server")]
     Relay,
+    #[display("Listen -- register on relay, accept tunnels")]
     Listen,
+    #[display("Dial -- connect to listener, start tunnel")]
     Dial,
 }
 
-impl fmt::Display for Mode {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            Self::Relay => write!(f, "Relay -- run a circuit relay server"),
-            Self::Listen => write!(f, "Listen -- register on relay, accept tunnels"),
-            Self::Dial => write!(f, "Dial -- connect to listener, start tunnel"),
-        }
-    }
-}
-
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, derive_more::Display)]
 enum ListenConn {
+    #[display("Relay (remote) -- use a relay for NAT traversal")]
     Relay,
+    #[display("LAN only (mDNS) -- local network discovery only")]
     Lan,
 }
 
-impl fmt::Display for ListenConn {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            Self::Relay => write!(f, "Relay (remote) -- use a relay for NAT traversal"),
-            Self::Lan => write!(f, "LAN only (mDNS) -- local network discovery only"),
-        }
-    }
-}
-
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, derive_more::Display)]
 enum DialConn {
+    #[display("Relay circuit address -- dial full relay circuit multiaddr")]
     Relay,
+    #[display("mDNS (LAN) -- dial by peer id on local network")]
     Mdns,
+    #[display("Pairing code -- dial using pairing code plus relay address")]
     Pairing,
 }
 
-impl fmt::Display for DialConn {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            Self::Relay => write!(
-                f,
-                "Relay circuit address -- dial full relay circuit multiaddr"
-            ),
-            Self::Mdns => write!(f, "mDNS (LAN) -- dial by peer id on local network"),
-            Self::Pairing => write!(
-                f,
-                "Pairing code -- dial using pairing code plus relay address"
-            ),
-        }
-    }
-}
-
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, derive_more::Display)]
 enum TunnelMode {
+    #[display("Netcat (default) -- interactive stdin/stdout stream")]
     Netcat,
+    #[display("Local forward (-L) -- expose local port and forward remotely")]
     Local,
+    #[display("Reverse forward (-R) -- expose remote port and forward locally")]
     Reverse,
+    #[display("SOCKS5 proxy (-D) -- start local SOCKS5/HTTP CONNECT proxy")]
     Socks,
-}
-
-impl fmt::Display for TunnelMode {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            Self::Netcat => write!(f, "Netcat (default) -- interactive stdin/stdout stream"),
-            Self::Local => write!(
-                f,
-                "Local forward (-L) -- expose local port and forward remotely"
-            ),
-            Self::Reverse => write!(
-                f,
-                "Reverse forward (-R) -- expose remote port and forward locally"
-            ),
-            Self::Socks => write!(
-                f,
-                "SOCKS5 proxy (-D) -- start local SOCKS5/HTTP CONNECT proxy"
-            ),
-        }
-    }
 }
 
 // ── Public entry point
