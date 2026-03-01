@@ -1,0 +1,5 @@
+[default.extend-identifiers]
+# sape is the project name, not a typo
+sape = "sape"
+# dcutr is libp2p's Direct Connection Upgrade through Relay protocol
+dcutr = "dcutr"
