@@ -11,5 +11,7 @@ await $`tar -C dist -czf dist/sape-linux-arm64.tar.gz sape-linux-arm64`;
 
 const stat = await Deno.stat("dist/sape-linux-arm64");
 const mb = (stat.size / 1024 / 1024).toFixed(1);
-console.log(`dist/sape-linux-arm64 (${mb}MB) — statically linked, runs on Termux`);
+console.log(
+  `dist/sape-linux-arm64 (${mb}MB) — statically linked, runs on Termux`,
+);
 console.log("dist/sape-linux-arm64.tar.gz");

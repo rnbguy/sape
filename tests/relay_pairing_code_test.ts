@@ -43,7 +43,10 @@ Deno.test("relay pairing-code: netcat data over relay pairing code", async () =>
       pairingCode,
     ]);
     await waitForLog("e2e-relay-code-listener", `Pairing code: ${pairingCode}`);
-    await waitForLog("e2e-relay-code-listener", "rendezvous registration accepted");
+    await waitForLog(
+      "e2e-relay-code-listener",
+      "rendezvous registration accepted",
+    );
 
     // 3. Dialer sends a marker through pairing code rendezvous
     const marker = `E2E_RELAY_CODE_${Date.now()}`;

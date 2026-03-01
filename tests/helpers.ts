@@ -41,9 +41,14 @@ export async function dockerRunInteractive(
   opts: { env?: Record<string, string>; image?: string } = {},
 ): Promise<{ code: number; combined: string }> {
   const cmd = [
-    "docker", "run", "-i", "--rm",
-    "--name", name,
-    "--network", NETWORK,
+    "docker",
+    "run",
+    "-i",
+    "--rm",
+    "--name",
+    name,
+    "--network",
+    NETWORK,
   ];
 
   for (const [k, v] of Object.entries(opts.env ?? { RUST_LOG: "info" })) {
@@ -107,7 +112,8 @@ export async function dockerExec(
   delayMs = 1000,
 ): Promise<string> {
   for (let i = 0; i < retries; i++) {
-    const result = await $`docker exec ${container} ${cmd}`.noThrow().captureCombined();
+    const result = await $`docker exec ${container} ${cmd}`.noThrow()
+      .captureCombined();
     if (result.code === 0) return result.combined;
     if (i === retries - 1) {
       throw new Error(

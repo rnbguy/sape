@@ -1,9 +1,7 @@
 use std::sync::Arc;
 
-use libp2p::{
-    autonat, dcutr, identify, mdns, ping, relay, rendezvous, upnp,
-    swarm::NetworkBehaviour,
-};
+use libp2p::swarm::NetworkBehaviour;
+use libp2p::{autonat, dcutr, identify, mdns, ping, relay, rendezvous, upnp};
 use libp2p_stream as p2pstream;
 
 pub(crate) mod builder;
@@ -11,9 +9,9 @@ pub(crate) mod dial;
 pub(crate) mod listen;
 pub(crate) mod swarm;
 
+pub(crate) use builder::{build_client_swarm, start_listeners};
 pub use dial::run_dial;
 pub use listen::run_listen;
-pub(crate) use builder::{build_client_swarm, start_listeners};
 
 #[derive(NetworkBehaviour)]
 pub(crate) struct ClientBehaviour {
@@ -30,7 +28,16 @@ pub(crate) struct ClientBehaviour {
 
 pub(crate) enum DialMode {
     Netcat,
-    LocalForward { bind_port: u16, target: Arc<str> },
-    ReverseForward { bind_port: u16, target: Arc<str>, gateway_ports: bool },
-    Socks5 { bind_port: u16 },
+    LocalForward {
+        bind_port: u16,
+        target: Arc<str>,
+    },
+    ReverseForward {
+        bind_port: u16,
+        target: Arc<str>,
+        gateway_ports: bool,
+    },
+    Socks5 {
+        bind_port: u16,
+    },
 }

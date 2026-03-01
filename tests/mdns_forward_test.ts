@@ -1,6 +1,12 @@
 import { assert } from "jsr:@std/assert";
 import { DIALER_SEED, LISTENER_PEER_ID, LISTENER_SEED } from "./constants.ts";
-import { dockerExec, dockerLogs, dockerRm, dockerRun, waitForLog } from "./helpers.ts";
+import {
+  dockerExec,
+  dockerLogs,
+  dockerRm,
+  dockerRun,
+  waitForLog,
+} from "./helpers.ts";
 
 Deno.test("mDNS local-forward: TCP forwarding over LAN discovery", async () => {
   const containers = [
@@ -13,10 +19,13 @@ Deno.test("mDNS local-forward: TCP forwarding over LAN discovery", async () => {
     await dockerRun(
       "e2e-mdns-fwd-http",
       [
-        "run", "-A",
+        "run",
+        "-A",
         "jsr:@std/http/file-server",
-        "-p", "9000",
-        "--host", "0.0.0.0",
+        "-p",
+        "9000",
+        "--host",
+        "0.0.0.0",
       ],
       {
         image: "denoland/deno",

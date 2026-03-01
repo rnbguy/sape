@@ -16,7 +16,6 @@ pub enum JumpResult {
     Error(String),
 }
 
-
 pub async fn read_jump_chain(stream: &mut Stream) -> io::Result<JumpChain> {
     let mut len_buf = [0u8; 4];
     stream.read_exact(&mut len_buf).await?;

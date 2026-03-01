@@ -2,19 +2,23 @@ use std::sync::Arc;
 
 use color_eyre::eyre::{Result, WrapErr, bail, eyre};
 use futures::StreamExt;
-use libp2p::{StreamProtocol, core::multiaddr::Protocol, rendezvous};
+use libp2p::core::multiaddr::Protocol;
+use libp2p::{StreamProtocol, rendezvous};
 use tracing::{error, info, warn};
 
-use crate::{
-    ListenOpt, resolve_identity,
-    forward, netcat,
-    tunnel::{self, TunnelRequest},
-    pairing, peer_id_from_multiaddr, validate_relay_address,
-};
-use super::{build_client_swarm, start_listeners};
 use super::swarm::{connect_and_identify, drive_client_swarm};
+use super::{build_client_swarm, start_listeners};
+use crate::tunnel::{self, TunnelRequest};
+use crate::{
+    ListenOpt, forward, netcat, pairing, peer_id_from_multiaddr, resolve_identity,
+    validate_relay_address,
+};
 
-pub async fn run_listen(opt: ListenOpt, tunnel_proto: StreamProtocol, namespace: &str) -> Result<()> {
+pub async fn run_listen(
+    opt: ListenOpt,
+    tunnel_proto: StreamProtocol,
+    namespace: &str,
+) -> Result<()> {
     if let Some(ref addr) = opt.relay_address {
         validate_relay_address(addr)
             .wrap_err_with(|| format!("invalid --relay-address '{addr}'"))?;

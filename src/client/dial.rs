@@ -4,15 +4,15 @@ use color_eyre::eyre::{Result, WrapErr, bail, eyre};
 use libp2p::{StreamProtocol, rendezvous};
 use tracing::{error, info};
 
-use crate::{
-    DialOpt, DialTarget, jump, resolve_identity,
-    forward, netcat, peer_id_from_multiaddr, relay_base_from_circuit_address,
-    tunnel::{self, TunnelRequest},
+use super::swarm::{
+    connect_and_identify, drive_client_swarm, wait_for_mdns_and_connect, wait_for_peer_connection,
+    wait_for_rendezvous_discovery,
 };
 use super::{DialMode, build_client_swarm, start_listeners};
-use super::swarm::{
-    connect_and_identify, drive_client_swarm,
-    wait_for_mdns_and_connect, wait_for_peer_connection, wait_for_rendezvous_discovery,
+use crate::tunnel::{self, TunnelRequest};
+use crate::{
+    DialOpt, DialTarget, forward, jump, netcat, peer_id_from_multiaddr,
+    relay_base_from_circuit_address, resolve_identity,
 };
 
 pub async fn run_dial(
@@ -35,7 +35,7 @@ pub async fn run_dial(
             DialTarget::Mdns(_) => bail!("cannot use --jump with mDNS targets"),
             DialTarget::PairingCode(_) => {
                 bail!("cannot use --jump with pairing codes (resolve the code first)")
-            }
+            },
         };
 
         let mut hops: Vec<String> = opt.jump[1..].iter().map(|a| a.to_string()).collect();
@@ -69,32 +69,32 @@ pub async fn run_dial(
         match result {
             jump::JumpResult::Ok => {
                 info!("jump chain established");
-            }
+            },
             jump::JumpResult::Error(e) => {
                 bail!("jump chain failed: {e}");
-            }
+            },
         }
 
         match &mode {
             DialMode::Netcat => {
                 tunnel::write_tunnel_request(&mut jump_stream, &TunnelRequest::Netcat).await?;
                 netcat::run_netcat(&mut jump_stream).await?;
-            }
+            },
             DialMode::LocalForward { .. } => {
                 bail!(
                     "local forward through jump chains is not supported yet; use direct relay circuit or pairing code"
                 );
-            }
+            },
             DialMode::ReverseForward { .. } => {
                 bail!(
                     "reverse forward through jump chains is not supported yet; use direct relay circuit or pairing code"
                 );
-            }
+            },
             DialMode::Socks5 { .. } => {
                 bail!(
                     "socks5 through jump chains is not supported yet; use direct relay circuit or pairing code"
                 );
-            }
+            },
         }
 
         return Ok(());
@@ -108,12 +108,12 @@ pub async fn run_dial(
             swarm.dial(addr.clone())?;
             wait_for_peer_connection(&mut swarm, remote_peer_id).await?;
             remote_peer_id
-        }
+        },
         DialTarget::Mdns(peer_id) => {
             info!(%peer_id, "waiting for mDNS discovery");
             wait_for_mdns_and_connect(&mut swarm, peer_id).await?;
             peer_id
-        }
+        },
         DialTarget::PairingCode(ref code) => {
             let relay_address = relay_address_opt
                 .as_ref()
@@ -132,7 +132,7 @@ pub async fn run_dial(
                 .discover(Some(namespace), None, None, relay_peer_id);
 
             wait_for_rendezvous_discovery(&mut swarm, relay_peer_id).await?
-        }
+        },
     };
 
     let control = swarm.behaviour_mut().stream.new_control();
@@ -155,12 +155,16 @@ pub async fn run_dial(
                 forward::open_stream(control, remote_peer_id, tunnel_proto.clone()).await?;
             tunnel::write_tunnel_request(&mut stream, &TunnelRequest::Netcat).await?;
             netcat::run_netcat(&mut stream).await?;
-        }
+        },
         DialMode::LocalForward { bind_port, target } => {
             forward::run_local_forward(control, remote_peer_id, bind_port, target, tunnel_proto)
                 .await?;
-        }
-        DialMode::ReverseForward { bind_port, target, gateway_ports } => {
+        },
+        DialMode::ReverseForward {
+            bind_port,
+            target,
+            gateway_ports,
+        } => {
             forward::request_reverse_forward(
                 control.clone(),
                 remote_peer_id,
@@ -172,10 +176,10 @@ pub async fn run_dial(
             .await?;
 
             forward::run_incoming_reverse_handler(incoming).await?;
-        }
+        },
         DialMode::Socks5 { bind_port } => {
             forward::run_socks5(control, remote_peer_id, bind_port, tunnel_proto).await?;
-        }
+        },
     }
 
     Ok(())

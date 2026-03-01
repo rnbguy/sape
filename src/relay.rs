@@ -3,12 +3,10 @@ use std::time::Duration;
 
 use color_eyre::eyre::{Result, WrapErr, bail, eyre};
 use futures::StreamExt;
+use libp2p::core::multiaddr::{Multiaddr, Protocol};
+use libp2p::swarm::{NetworkBehaviour, SwarmEvent};
 use libp2p::{
-    PeerId, Stream, StreamProtocol,
-    core::multiaddr::{Multiaddr, Protocol},
-    autonat, identify, noise, ping, relay, rendezvous,
-    swarm::{NetworkBehaviour, SwarmEvent},
-    tcp, yamux,
+    PeerId, Stream, StreamProtocol, autonat, identify, noise, ping, relay, rendezvous, tcp, yamux,
 };
 use libp2p_stream as p2pstream;
 use tokio::sync::mpsc;
@@ -118,9 +116,15 @@ pub async fn run_relay(
             let tunnel_proto = tunnel_proto_clone.clone();
             let jump_proto = jump_proto_clone.clone();
             tokio::spawn(async move {
-                if let Err(err) =
-                    handle_jump_request(peer, stream, dial_tx, open_control, tunnel_proto, jump_proto)
-                        .await
+                if let Err(err) = handle_jump_request(
+                    peer,
+                    stream,
+                    dial_tx,
+                    open_control,
+                    tunnel_proto,
+                    jump_proto,
+                )
+                .await
                 {
                     warn!(%peer, %err, "jump request failed");
                 }
@@ -230,16 +234,16 @@ async fn handle_jump_request(
             Ok(stream) => {
                 outbound = Some(stream);
                 break;
-            }
+            },
             Err(_) if attempt < 9 => {
                 tokio::time::sleep(Duration::from_millis(500 * (attempt + 1) as u64)).await;
-            }
+            },
             Err(err) => {
                 let error_msg = format!("failed to connect to hop {next_peer}: {err}");
                 jump::write_jump_result(&mut inbound, &jump::JumpResult::Error(error_msg.clone()))
                     .await?;
                 bail!(error_msg);
-            }
+            },
         }
     }
 
@@ -253,11 +257,11 @@ async fn handle_jump_request(
 
         let result = jump::read_jump_result(&mut outbound).await?;
         match result {
-            jump::JumpResult::Ok => {}
+            jump::JumpResult::Ok => {},
             jump::JumpResult::Error(e) => {
                 jump::write_jump_result(&mut inbound, &jump::JumpResult::Error(e.clone())).await?;
                 bail!("downstream jump failed: {e}");
-            }
+            },
         }
     }
 

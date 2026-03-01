@@ -1,7 +1,5 @@
-use std::{
-    net::{Ipv4Addr, SocketAddr},
-    sync::Arc,
-};
+use std::net::{Ipv4Addr, SocketAddr};
+use std::sync::Arc;
 
 use color_eyre::eyre::{self, WrapErr};
 use libp2p::{PeerId, Stream, StreamProtocol};
@@ -10,8 +8,8 @@ use tokio::net::{TcpListener, TcpStream};
 use tokio_util::compat::FuturesAsyncReadCompatExt;
 use tracing::{error, info, warn};
 
-use crate::tunnel::{self, TunnelRequest};
 use super::open_stream;
+use crate::tunnel::{self, TunnelRequest};
 
 pub async fn run_local_forward(
     control: p2pstream::Control,
@@ -38,7 +36,7 @@ pub async fn run_local_forward(
                 Err(err) => {
                     error!(%peer_addr, %err, "cannot open p2p stream for local-forward");
                     return;
-                }
+                },
             };
             let req = TunnelRequest::LocalForward {
                 target: target.to_string(),

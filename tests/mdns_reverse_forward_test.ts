@@ -1,6 +1,12 @@
 import { assert } from "jsr:@std/assert";
 import { DIALER_SEED, LISTENER_PEER_ID, LISTENER_SEED } from "./constants.ts";
-import { dockerExec, dockerLogs, dockerRm, dockerRun, waitForLog } from "./helpers.ts";
+import {
+  dockerExec,
+  dockerLogs,
+  dockerRm,
+  dockerRun,
+  waitForLog,
+} from "./helpers.ts";
 
 Deno.test("mDNS reverse-forward: TCP reverse forwarding over LAN discovery", async () => {
   const containers = [
@@ -13,10 +19,13 @@ Deno.test("mDNS reverse-forward: TCP reverse forwarding over LAN discovery", asy
     await dockerRun(
       "e2e-mdns-rfwd-http",
       [
-        "run", "-A",
+        "run",
+        "-A",
         "jsr:@std/http/file-server",
-        "-p", "9000",
-        "--host", "0.0.0.0",
+        "-p",
+        "9000",
+        "--host",
+        "0.0.0.0",
       ],
       {
         image: "denoland/deno",
@@ -44,7 +53,10 @@ Deno.test("mDNS reverse-forward: TCP reverse forwarding over LAN discovery", asy
         DIALER_SEED,
       ],
     );
-    await waitForLog("e2e-mdns-rfwd-dialer", "reverse forward request accepted");
+    await waitForLog(
+      "e2e-mdns-rfwd-dialer",
+      "reverse forward request accepted",
+    );
 
     // 4. Curl from inside the LISTENER container to the reverse-forwarded port
     const body = await dockerExec(

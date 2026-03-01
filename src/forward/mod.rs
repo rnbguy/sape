@@ -18,14 +18,14 @@ pub async fn send_reverse_ack(stream: &mut Stream, result: Result<(), String>) -
     match result {
         Ok(()) => {
             stream.write_all(&[REVERSE_OK]).await?;
-        }
+        },
         Err(reason) => {
             stream.write_all(&[REVERSE_FAILED]).await?;
             let bytes = reason.as_bytes();
             let len = (bytes.len() as u16).to_be_bytes();
             stream.write_all(&len).await?;
             stream.write_all(bytes).await?;
-        }
+        },
     }
     stream.flush().await
 }

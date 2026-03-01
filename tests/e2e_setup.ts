@@ -33,11 +33,14 @@ async function disableIgmpSnooping(): Promise<void> {
     `Disabling IGMP snooping on ${BRIDGE_NAME} via privileged container`,
   );
   // --network host so the container sees the host's bridge in /sys
-  await $`docker run --rm --privileged --network host alpine sh -c ${"echo 0 > " + sysPath}`;
+  await $`docker run --rm --privileged --network host alpine sh -c ${
+    "echo 0 > " + sysPath
+  }`;
 
   // Verify
   const value = (
-    await $`docker run --rm --privileged --network host alpine cat ${sysPath}`.text()
+    await $`docker run --rm --privileged --network host alpine cat ${sysPath}`
+      .text()
   ).trim();
   if (value !== "0") {
     throw new Error(

@@ -11,10 +11,15 @@ const MAX_REQUEST_SIZE: usize = 65_536;
 #[derive(Debug, serde::Serialize, serde::Deserialize)]
 pub enum TunnelRequest {
     Netcat,
-    LocalForward { target: String },
-    ReverseForward { bind_port: u16, target: String, gateway_ports: bool },
+    LocalForward {
+        target: String,
+    },
+    ReverseForward {
+        bind_port: u16,
+        target: String,
+        gateway_ports: bool,
+    },
 }
-
 
 pub async fn read_tunnel_request(stream: &mut Stream) -> io::Result<TunnelRequest> {
     let mut len_buf = [0u8; 4];
@@ -57,7 +62,8 @@ mod tests {
     fn tunnel_request_roundtrip_netcat() {
         let req = TunnelRequest::Netcat;
         let bytes = postcard::to_allocvec(&req).expect("serialize netcat request");
-        let decoded: TunnelRequest = postcard::from_bytes(&bytes).expect("deserialize netcat request");
+        let decoded: TunnelRequest =
+            postcard::from_bytes(&bytes).expect("deserialize netcat request");
         assert!(matches!(decoded, TunnelRequest::Netcat));
     }
 
@@ -86,11 +92,15 @@ mod tests {
         let decoded: TunnelRequest =
             postcard::from_bytes(&bytes).expect("deserialize reverse forward request");
         match decoded {
-            TunnelRequest::ReverseForward { bind_port, target, gateway_ports } => {
+            TunnelRequest::ReverseForward {
+                bind_port,
+                target,
+                gateway_ports,
+            } => {
                 assert_eq!(bind_port, 9090);
                 assert_eq!(target, "localhost:3000");
                 assert!(!gateway_ports);
-            }
+            },
             other => panic!("unexpected variant: {other:?}"),
         }
     }
@@ -106,11 +116,15 @@ mod tests {
         let decoded: TunnelRequest =
             postcard::from_bytes(&bytes).expect("deserialize gateway reverse forward");
         match decoded {
-            TunnelRequest::ReverseForward { bind_port, target, gateway_ports } => {
+            TunnelRequest::ReverseForward {
+                bind_port,
+                target,
+                gateway_ports,
+            } => {
                 assert_eq!(bind_port, 8080);
                 assert_eq!(target, "10.0.0.1:443");
                 assert!(gateway_ports);
-            }
+            },
             other => panic!("unexpected variant: {other:?}"),
         }
     }

@@ -8,7 +8,8 @@ This document explains the CLI-first tunnel architecture for:
 - proxy mode (`-D`, SOCKS5 + HTTP CONNECT)
 - mDNS LAN discovery (direct P2P, no relay)
 
-All inter-peer traffic is encrypted by libp2p Noise. The transport stack is configured in `sape/src/client/builder.rs` using:
+All inter-peer traffic is encrypted by libp2p Noise. The transport stack is
+configured in `sape/src/client/builder.rs` using:
 
 - TCP + Noise + Yamux
 - QUIC
@@ -195,9 +196,10 @@ Notes:
 
 ## 6) mDNS LAN Discovery Flow
 
-When both peers are on the same LAN, mDNS enables direct peer discovery without a relay server.
-The listener advertises its PeerID via multicast DNS, and the dialer discovers it automatically.
-All tunnel modes (`netcat`, `-L`, `-R`, `-D`) work identically after the direct connection is established.
+When both peers are on the same LAN, mDNS enables direct peer discovery without
+a relay server. The listener advertises its PeerID via multicast DNS, and the
+dialer discovers it automatically. All tunnel modes (`netcat`, `-L`, `-R`, `-D`)
+work identically after the direct connection is established.
 
 ```mermaid
 sequenceDiagram
@@ -231,8 +233,10 @@ Notes:
 ## Encryption Guarantees
 
 - Inter-peer traffic for all six flows runs through libp2p encrypted channels.
-- Relay nodes forward encrypted frames and do not terminate end-to-end application streams.
-- Local loopback segments (app -> `127.0.0.1:...` proxy/forward bind) are local host traffic, not network-exposed encryption boundaries.
+- Relay nodes forward encrypted frames and do not terminate end-to-end
+  application streams.
+- Local loopback segments (app -> `127.0.0.1:...` proxy/forward bind) are local
+  host traffic, not network-exposed encryption boundaries.
 
 ## Diagram Sources
 
@@ -245,7 +249,9 @@ Mermaid sources used for rendering are in:
 - `docs/diagrams/jump_flow.mmd`
 - `docs/diagrams/mdns_flow.mmd`
 
-ASCII renders (generated with [`beautiful-mermaid`](https://www.npmjs.com/package/beautiful-mermaid) via Deno) are in:
+ASCII renders (generated with
+[`beautiful-mermaid`](https://www.npmjs.com/package/beautiful-mermaid) via Deno)
+are in:
 
 - `docs/diagrams/netcat_flow.txt`
 - `docs/diagrams/local_forward_flow.txt`
@@ -260,4 +266,5 @@ Regenerate all diagrams:
 deno task docs:diagrams
 ```
 
-All Mermaid sequence diagrams use top-to-bottom participant columns for process-oriented visualization on GitHub.
+All Mermaid sequence diagrams use top-to-bottom participant columns for
+process-oriented visualization on GitHub.

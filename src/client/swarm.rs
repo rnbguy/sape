@@ -1,13 +1,10 @@
 use std::time::Duration;
 
-use color_eyre::eyre::{bail, eyre, Result};
+use color_eyre::eyre::{Result, bail, eyre};
 use futures::StreamExt;
-use libp2p::{
-    PeerId,
-    core::multiaddr::{Multiaddr, Protocol},
-    identify, mdns, rendezvous,
-    swarm::SwarmEvent,
-};
+use libp2p::core::multiaddr::{Multiaddr, Protocol};
+use libp2p::swarm::SwarmEvent;
+use libp2p::{PeerId, identify, mdns, rendezvous};
 use tokio::time::timeout;
 use tracing::{info, warn};
 
@@ -35,23 +32,25 @@ pub(crate) async fn connect_and_identify(
             match event {
                 SwarmEvent::NewListenAddr { address, .. } => {
                     info!(address = %address, "client listening");
-                }
+                },
                 SwarmEvent::Behaviour(ClientBehaviourEvent::Identify(identify::Event::Sent {
                     ..
                 })) => {
                     told_relay_observed_addr = true;
-                }
-                SwarmEvent::Behaviour(ClientBehaviourEvent::Identify(identify::Event::Received {
-                    info: identify::Info { observed_addr, .. },
-                    ..
-                })) => {
+                },
+                SwarmEvent::Behaviour(ClientBehaviourEvent::Identify(
+                    identify::Event::Received {
+                        info: identify::Info { observed_addr, .. },
+                        ..
+                    },
+                )) => {
                     info!(%observed_addr, "observed address from relay");
                     learned_observed_addr = true;
-                }
+                },
                 SwarmEvent::OutgoingConnectionError { peer_id, error, .. } => {
                     warn!(?peer_id, %error, "outgoing connection error during setup");
-                }
-                _ => {}
+                },
+                _ => {},
             }
         }
         Ok(())
@@ -80,14 +79,14 @@ pub(crate) async fn wait_for_peer_connection(
                     if peer_id == expected_peer {
                         return Ok(());
                     }
-                }
+                },
                 SwarmEvent::OutgoingConnectionError { peer_id, error, .. } => {
                     warn!(?peer_id, %error, "outgoing connection error before tunnel startup");
-                }
+                },
                 SwarmEvent::Behaviour(event) => {
                     info!(?event, "client behaviour event during dial");
-                }
-                _ => {}
+                },
+                _ => {},
             }
         }
     })
@@ -101,12 +100,12 @@ pub(crate) fn log_mdns_event(event: &mdns::Event) {
             for (peer_id, addr) in peers {
                 info!(%peer_id, %addr, "mDNS discovered peer");
             }
-        }
+        },
         mdns::Event::Expired(peers) => {
             for (peer_id, addr) in peers {
                 info!(%peer_id, %addr, "mDNS peer expired");
             }
-        }
+        },
     }
 }
 
@@ -122,7 +121,7 @@ pub(crate) async fn wait_for_mdns_and_connect(
         match event {
             SwarmEvent::NewListenAddr { address, .. } => {
                 info!(address = %address, "client listening");
-            }
+            },
             SwarmEvent::Behaviour(ClientBehaviourEvent::Mdns(mdns::Event::Discovered(peers))) => {
                 log_mdns_event(&mdns::Event::Discovered(peers.clone()));
                 for (peer_id, addr) in peers {
@@ -132,10 +131,10 @@ pub(crate) async fn wait_for_mdns_and_connect(
                         return wait_for_peer_connection(swarm, expected_peer).await;
                     }
                 }
-            }
+            },
             SwarmEvent::Behaviour(ClientBehaviourEvent::Mdns(mdns::Event::Expired(peers))) => {
                 log_mdns_event(&mdns::Event::Expired(peers));
-            }
+            },
             SwarmEvent::ConnectionEstablished {
                 peer_id, endpoint, ..
             } => {
@@ -143,8 +142,8 @@ pub(crate) async fn wait_for_mdns_and_connect(
                 if peer_id == expected_peer {
                     return Ok(());
                 }
-            }
-            _ => {}
+            },
+            _ => {},
         }
     }
 }
@@ -228,12 +227,12 @@ pub(crate) async fn drive_client_swarm(mut swarm: libp2p::Swarm<ClientBehaviour>
         match event {
             SwarmEvent::NewListenAddr { address, .. } => {
                 info!(address = %address, "client listening");
-            }
+            },
             SwarmEvent::ConnectionEstablished {
                 peer_id, endpoint, ..
             } => {
                 info!(%peer_id, ?endpoint, "connection established");
-            }
+            },
             SwarmEvent::ConnectionClosed {
                 peer_id,
                 cause,
@@ -241,68 +240,66 @@ pub(crate) async fn drive_client_swarm(mut swarm: libp2p::Swarm<ClientBehaviour>
                 ..
             } => {
                 warn!(%peer_id, ?endpoint, ?cause, "connection closed");
-            }
+            },
             SwarmEvent::Behaviour(ClientBehaviourEvent::RelayClient(event)) => {
                 info!(?event, "relay client event");
-            }
+            },
             SwarmEvent::Behaviour(ClientBehaviourEvent::Dcutr(event)) => {
                 info!(?event, "dcutr event");
-            }
+            },
             SwarmEvent::Behaviour(ClientBehaviourEvent::Identify(event)) => {
                 info!(?event, "identify event");
-            }
+            },
             SwarmEvent::Behaviour(ClientBehaviourEvent::Stream(event)) => {
                 info!(?event, "stream event");
-            }
+            },
             SwarmEvent::Behaviour(ClientBehaviourEvent::Mdns(event)) => {
                 log_mdns_event(&event);
-            }
-            SwarmEvent::Behaviour(ClientBehaviourEvent::Rendezvous(event)) => {
-                match event {
-                    rendezvous::client::Event::Registered {
-                        namespace,
-                        ttl,
-                        rendezvous_node,
-                    } => {
-                        info!(?namespace, ?ttl, %rendezvous_node, "rendezvous registration accepted");
-                    }
-                    rendezvous::client::Event::Discovered {
-                        registrations,
-                        rendezvous_node,
-                        ..
-                    } => {
-                        info!(count = registrations.len(), %rendezvous_node, "rendezvous discovery result");
-                    }
-                    rendezvous::client::Event::RegisterFailed {
-                        namespace,
-                        error,
-                        rendezvous_node,
-                    } => {
-                        warn!(?namespace, ?error, %rendezvous_node, "rendezvous registration failed");
-                    }
-                    rendezvous::client::Event::DiscoverFailed {
-                        namespace,
-                        error,
-                        rendezvous_node,
-                    } => {
-                        warn!(?namespace, ?error, %rendezvous_node, "rendezvous discovery failed");
-                    }
-                    other => {
-                        info!(?other, "rendezvous client event");
-                    }
-                }
-            }
+            },
+            SwarmEvent::Behaviour(ClientBehaviourEvent::Rendezvous(event)) => match event {
+                rendezvous::client::Event::Registered {
+                    namespace,
+                    ttl,
+                    rendezvous_node,
+                } => {
+                    info!(?namespace, ?ttl, %rendezvous_node, "rendezvous registration accepted");
+                },
+                rendezvous::client::Event::Discovered {
+                    registrations,
+                    rendezvous_node,
+                    ..
+                } => {
+                    info!(count = registrations.len(), %rendezvous_node, "rendezvous discovery result");
+                },
+                rendezvous::client::Event::RegisterFailed {
+                    namespace,
+                    error,
+                    rendezvous_node,
+                } => {
+                    warn!(?namespace, ?error, %rendezvous_node, "rendezvous registration failed");
+                },
+                rendezvous::client::Event::DiscoverFailed {
+                    namespace,
+                    error,
+                    rendezvous_node,
+                } => {
+                    warn!(?namespace, ?error, %rendezvous_node, "rendezvous discovery failed");
+                },
+                other => {
+                    info!(?other, "rendezvous client event");
+                },
+            },
             SwarmEvent::Behaviour(ClientBehaviourEvent::Autonat(event)) => {
                 info!(?event, "autonat event");
-            }
+            },
             SwarmEvent::Behaviour(ClientBehaviourEvent::Upnp(event)) => {
                 info!(?event, "upnp event");
-            }
-            SwarmEvent::Behaviour(ClientBehaviourEvent::Ping(_)) => {}
+            },
+            SwarmEvent::Behaviour(ClientBehaviourEvent::Ping(_)) => {},
             SwarmEvent::OutgoingConnectionError { peer_id, error, .. } => {
                 warn!(?peer_id, %error, "outgoing connection error");
-            }
-            _ => {}
+            },
+            _ => {},
         }
     }
 }

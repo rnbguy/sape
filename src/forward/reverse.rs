@@ -1,8 +1,6 @@
-use std::{
-    io,
-    net::{Ipv4Addr, SocketAddr},
-    sync::Arc,
-};
+use std::io;
+use std::net::{Ipv4Addr, SocketAddr};
+use std::sync::Arc;
 
 use color_eyre::eyre::{self, WrapErr};
 use futures::StreamExt;
@@ -13,8 +11,8 @@ use tokio::net::TcpListener;
 use tokio_util::compat::FuturesAsyncReadCompatExt;
 use tracing::{error, info, warn};
 
-use crate::tunnel::{self, REVERSE_OK, TunnelRequest};
 use super::{handle_forward_to_target, open_stream};
+use crate::tunnel::{self, REVERSE_OK, TunnelRequest};
 
 pub async fn start_reverse_listener(
     control: p2pstream::Control,
@@ -24,7 +22,11 @@ pub async fn start_reverse_listener(
     gateway_ports: bool,
     protocol: StreamProtocol,
 ) -> eyre::Result<()> {
-    let bind_ip = if gateway_ports { Ipv4Addr::UNSPECIFIED } else { Ipv4Addr::LOCALHOST };
+    let bind_ip = if gateway_ports {
+        Ipv4Addr::UNSPECIFIED
+    } else {
+        Ipv4Addr::LOCALHOST
+    };
     let bind_addr = SocketAddr::new(bind_ip.into(), bind_port);
     let listener = TcpListener::bind(bind_addr)
         .await
@@ -39,7 +41,7 @@ pub async fn start_reverse_listener(
                 Err(err) => {
                     error!(%err, "reverse listener accept failed");
                     continue;
-                }
+                },
             };
 
             let target = Arc::clone(&target);
@@ -52,7 +54,7 @@ pub async fn start_reverse_listener(
                     Err(err) => {
                         error!(%peer_addr, %err, "cannot open p2p stream for reverse-forward");
                         return;
-                    }
+                    },
                 };
 
                 let req = TunnelRequest::ReverseForward {
@@ -91,7 +93,11 @@ pub async fn request_reverse_forward(
         .await
         .map_err(|err| io::Error::other(err.to_string()))
         .wrap_err("failed to open p2p stream for reverse-forward request")?;
-    let req = TunnelRequest::ReverseForward { bind_port, target, gateway_ports };
+    let req = TunnelRequest::ReverseForward {
+        bind_port,
+        target,
+        gateway_ports,
+    };
     tunnel::write_tunnel_request(&mut stream, &req)
         .await
         .wrap_err("failed to send reverse-forward request")?;
@@ -121,7 +127,7 @@ pub async fn run_incoming_reverse_handler(
             Err(err) => {
                 warn!(%peer, %err, "failed to parse incoming reverse stream request");
                 continue;
-            }
+            },
         };
 
         match request {
@@ -132,10 +138,10 @@ pub async fn run_incoming_reverse_handler(
                         error!(%peer, "{err:#}");
                     }
                 });
-            }
+            },
             other => {
                 warn!(%peer, ?other, "unexpected incoming request in reverse-forward mode");
-            }
+            },
         }
     }
 

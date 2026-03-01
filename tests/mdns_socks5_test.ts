@@ -1,6 +1,12 @@
 import { assert } from "jsr:@std/assert";
 import { DIALER_SEED, LISTENER_PEER_ID, LISTENER_SEED } from "./constants.ts";
-import { dockerExec, dockerLogs, dockerRm, dockerRun, waitForLog } from "./helpers.ts";
+import {
+  dockerExec,
+  dockerLogs,
+  dockerRm,
+  dockerRun,
+  waitForLog,
+} from "./helpers.ts";
 
 Deno.test("mDNS socks5: SOCKS5 proxy over LAN discovery", async () => {
   const containers = [
@@ -13,10 +19,13 @@ Deno.test("mDNS socks5: SOCKS5 proxy over LAN discovery", async () => {
     await dockerRun(
       "e2e-mdns-s5-http",
       [
-        "run", "-A",
+        "run",
+        "-A",
         "jsr:@std/http/file-server",
-        "-p", "9000",
-        "--host", "0.0.0.0",
+        "-p",
+        "9000",
+        "--host",
+        "0.0.0.0",
       ],
       {
         image: "denoland/deno",
@@ -49,7 +58,13 @@ Deno.test("mDNS socks5: SOCKS5 proxy over LAN discovery", async () => {
     //    The request goes: dialer:1080 → tunnel → listener → e2e-mdns-s5-http:9000
     const body = await dockerExec(
       "e2e-mdns-s5-dialer",
-      ["curl", "-sf", "--socks5-hostname", "127.0.0.1:1080", "http://e2e-mdns-s5-http:9000/"],
+      [
+        "curl",
+        "-sf",
+        "--socks5-hostname",
+        "127.0.0.1:1080",
+        "http://e2e-mdns-s5-http:9000/",
+      ],
     );
 
     assert(body.length > 0, `Expected non-empty HTTP response body`);

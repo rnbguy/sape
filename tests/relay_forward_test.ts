@@ -6,7 +6,13 @@ import {
   RELAY_PEER_ID,
   RELAY_SEED,
 } from "./constants.ts";
-import { dockerExec, dockerLogs, dockerRm, dockerRun, waitForLog } from "./helpers.ts";
+import {
+  dockerExec,
+  dockerLogs,
+  dockerRm,
+  dockerRun,
+  waitForLog,
+} from "./helpers.ts";
 
 Deno.test("relay local-forward: TCP forwarding over relay circuit", async () => {
   const containers = [
@@ -30,10 +36,13 @@ Deno.test("relay local-forward: TCP forwarding over relay circuit", async () => 
     await dockerRun(
       "e2e-relay-fwd-http",
       [
-        "run", "-A",
+        "run",
+        "-A",
         "jsr:@std/http/file-server",
-        "-p", "9000",
-        "--host", "0.0.0.0",
+        "-p",
+        "9000",
+        "--host",
+        "0.0.0.0",
       ],
       {
         image: "denoland/deno",
@@ -41,8 +50,7 @@ Deno.test("relay local-forward: TCP forwarding over relay circuit", async () => 
     );
 
     // 3. Start listener with relay
-    const relayAddr =
-      `/dns4/e2e-relay-fwd-relay/tcp/4001/p2p/${RELAY_PEER_ID}`;
+    const relayAddr = `/dns4/e2e-relay-fwd-relay/tcp/4001/p2p/${RELAY_PEER_ID}`;
     await dockerRun("e2e-relay-fwd-listener", [
       "listen",
       "--secret-key-seed",
@@ -53,8 +61,7 @@ Deno.test("relay local-forward: TCP forwarding over relay circuit", async () => 
     await waitForLog("e2e-relay-fwd-listener", "Relay dial address:");
 
     // 4. Start dialer with local-forward
-    const circuitAddr =
-      `${relayAddr}/p2p-circuit/p2p/${LISTENER_PEER_ID}`;
+    const circuitAddr = `${relayAddr}/p2p-circuit/p2p/${LISTENER_PEER_ID}`;
     await dockerRun(
       "e2e-relay-fwd-dialer",
       [

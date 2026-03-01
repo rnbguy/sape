@@ -3,11 +3,15 @@
 Single-binary (`sape`) libp2p NAT traversal and tunneling tool in Rust.
 
 It provides:
+
 - `relay`: circuit relay server (rendezvous + relay v2)
-- `listen`: registers on relay and/or enables mDNS LAN discovery, prints dial-ready addresses
-- `dial`: connects to listener via relay circuit or mDNS LAN, starts a tunnel mode (`netcat`, `-L`, `-R`, `-D`)
+- `listen`: registers on relay and/or enables mDNS LAN discovery, prints
+  dial-ready addresses
+- `dial`: connects to listener via relay circuit or mDNS LAN, starts a tunnel
+  mode (`netcat`, `-L`, `-R`, `-D`)
 
 Architecture details (with top-to-bottom flow diagrams):
+
 - `docs/architecture.md`
 
 ## Build
@@ -93,7 +97,8 @@ RUST_LOG=info ./target/release/sape dial /mdns/<LISTENER_PEER_ID>
 
 ## Tunnel Modes
 
-Only one tunnel mode can be active per dial: `-L`, `-R`, or `-D` (mutually exclusive). Short alias: `sape d`.
+Only one tunnel mode can be active per dial: `-L`, `-R`, or `-D` (mutually
+exclusive). Short alias: `sape d`.
 
 ### Netcat (default)
 
@@ -150,9 +155,12 @@ curl -x http://127.0.0.1:1080 https://example.com
 ```
 
 DNS behavior in `-D` mode:
-- `--socks5-hostname` (`socks5h`) resolves DNS on the remote side through the tunnel
+
+- `--socks5-hostname` (`socks5h`) resolves DNS on the remote side through the
+  tunnel
 - plain `--socks5` may resolve DNS locally in the client process
-- forcing system-wide DNS interception requires a TUN-based VPN and elevated privileges, which this project intentionally avoids
+- forcing system-wide DNS interception requires a TUN-based VPN and elevated
+  privileges, which this project intentionally avoids
 
 ### Pairing Codes
 
@@ -185,7 +193,8 @@ RUST_LOG=info ./target/release/sape dial \
   <FINAL_CIRCUIT_TARGET>
 ```
 
-Current limitation: jump chaining supports netcat mode only (not `-L`, `-R`, `-D`).
+Current limitation: jump chaining supports netcat mode only (not `-L`, `-R`,
+`-D`).
 
 ## Security
 
@@ -200,11 +209,13 @@ RUST_LOG=info ./target/release/sape listen \
   --allowed-peer <PEER_ID_2>
 ```
 
-When set, only the listed peer IDs are permitted to open tunnel streams. All other connections are rejected.
+When set, only the listed peer IDs are permitted to open tunnel streams. All
+other connections are rejected.
 
 ### Identity files (`--identity-file`)
 
-Load a persistent Ed25519 keypair from a file instead of generating a random one each run:
+Load a persistent Ed25519 keypair from a file instead of generating a random one
+each run:
 
 ```bash
 RUST_LOG=info ./target/release/sape relay --port 4001 --identity-file relay.key
@@ -212,11 +223,13 @@ RUST_LOG=info ./target/release/sape listen --identity-file listener.key --relay-
 RUST_LOG=info ./target/release/sape dial --identity-file dialer.key <TARGET>
 ```
 
-This ensures a stable PeerID across restarts, which is required for `--allowed-peer` and for publishing stable relay addresses.
+This ensures a stable PeerID across restarts, which is required for
+`--allowed-peer` and for publishing stable relay addresses.
 
 ### Deterministic key seed (`--secret-key-seed`)
 
-Generate a deterministic keypair from a numeric seed (useful for testing and Docker validation, NOT for production):
+Generate a deterministic keypair from a numeric seed (useful for testing and
+Docker validation, NOT for production):
 
 ```bash
 RUST_LOG=info ./target/release/sape relay --port 4001 --secret-key-seed 1
@@ -224,10 +237,10 @@ RUST_LOG=info ./target/release/sape relay --port 4001 --secret-key-seed 1
 
 The same seed always produces the same PeerID.
 
-
 ## Termux (Android)
 
-The `sape` binary is a **fully static ARM64 ELF** — it runs on Termux without any shared library dependencies.
+The `sape` binary is a **fully static ARM64 ELF** — it runs on Termux without
+any shared library dependencies.
 
 ### Transfer the pre-built binary
 
@@ -261,16 +274,21 @@ cargo build --release
 
 ### Network modes on Android
 
-- **Relay mode**: Works on any network (WiFi or cellular). Requires a public relay server.
-- **mDNS LAN discovery**: Works on WiFi only (multicast). No relay needed on the same LAN.
+- **Relay mode**: Works on any network (WiFi or cellular). Requires a public
+  relay server.
+- **mDNS LAN discovery**: Works on WiFi only (multicast). No relay needed on the
+  same LAN.
 
 ### Typical use-case
 
-Run `sape listen` on your Android device. It registers with a relay and prints a dial address. Then `sape dial` from another machine using the printed address.
+Run `sape listen` on your Android device. It registers with a relay and prints a
+dial address. Then `sape dial` from another machine using the printed address.
 
 ## Custom Namespace
 
-By default, sape uses `sape` as the protocol namespace. You can override this with the `SAPE_NAMESPACE` environment variable to create isolated private networks:
+By default, sape uses `sape` as the protocol namespace. You can override this
+with the `SAPE_NAMESPACE` environment variable to create isolated private
+networks:
 
 ```bash
 SAPE_NAMESPACE=mynet sape relay --port 4001
@@ -283,6 +301,7 @@ Peers using different namespaces cannot communicate with each other.
 ## Docker Validation
 
 The repository includes:
+
 - `Dockerfile`
 - `docker-compose.yml`
 
@@ -296,6 +315,7 @@ docker compose down
 ```
 
 What this validates:
+
 - relay starts and listens
 - listener obtains relay reservation (`ReservationReqAccepted`)
 - listener prints full circuit dial address
@@ -303,7 +323,10 @@ What this validates:
 - DCUtR upgrade attempt occurs (`dcutr event`)
 
 Important limitation:
-- Docker compose uses a local bridge network. This is a strong integration test for protocol wiring and event flow, but it is **not** a full real-world NAT matrix test (home NAT, CGNAT, symmetric NAT, enterprise firewall).
+
+- Docker compose uses a local bridge network. This is a strong integration test
+  for protocol wiring and event flow, but it is **not** a full real-world NAT
+  matrix test (home NAT, CGNAT, symmetric NAT, enterprise firewall).
 
 ## SCP to remote
 

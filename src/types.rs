@@ -1,10 +1,9 @@
-use std::fmt;
-use std::fs;
 use std::path::Path;
 use std::str::FromStr;
+use std::{fmt, fs};
 
 use libp2p::core::multiaddr::{Multiaddr, Protocol};
-use libp2p::{identity, PeerId};
+use libp2p::{PeerId, identity};
 
 use crate::pairing;
 
@@ -98,7 +97,7 @@ pub fn validate_relay_address(addr: &Multiaddr) -> Result<(), AddressError> {
             Protocol::Tcp(_) => has_tcp = true,
             Protocol::Udp(_) => has_udp = true,
             Protocol::QuicV1 => has_quic_v1 = true,
-            _ => {}
+            _ => {},
         }
     }
 
@@ -220,8 +219,9 @@ impl fmt::Display for ForwardSpec {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use std::str::FromStr;
+
+    use super::*;
 
     #[test]
     fn dial_target_mdns_valid() {

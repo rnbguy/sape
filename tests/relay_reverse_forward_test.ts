@@ -6,7 +6,13 @@ import {
   RELAY_PEER_ID,
   RELAY_SEED,
 } from "./constants.ts";
-import { dockerExec, dockerLogs, dockerRm, dockerRun, waitForLog } from "./helpers.ts";
+import {
+  dockerExec,
+  dockerLogs,
+  dockerRm,
+  dockerRun,
+  waitForLog,
+} from "./helpers.ts";
 
 Deno.test("relay reverse-forward: TCP reverse forwarding over relay circuit", async () => {
   const containers = [
@@ -30,10 +36,13 @@ Deno.test("relay reverse-forward: TCP reverse forwarding over relay circuit", as
     await dockerRun(
       "e2e-relay-rfwd-http",
       [
-        "run", "-A",
+        "run",
+        "-A",
         "jsr:@std/http/file-server",
-        "-p", "9000",
-        "--host", "0.0.0.0",
+        "-p",
+        "9000",
+        "--host",
+        "0.0.0.0",
       ],
       {
         image: "denoland/deno",
@@ -54,8 +63,7 @@ Deno.test("relay reverse-forward: TCP reverse forwarding over relay circuit", as
 
     // 4. Start dialer with reverse-forward
     //    Binds 9090 on LISTENER side, forwards to e2e-relay-rfwd-http:9000 (dialer side)
-    const circuitAddr =
-      `${relayAddr}/p2p-circuit/p2p/${LISTENER_PEER_ID}`;
+    const circuitAddr = `${relayAddr}/p2p-circuit/p2p/${LISTENER_PEER_ID}`;
     await dockerRun(
       "e2e-relay-rfwd-dialer",
       [
@@ -67,7 +75,10 @@ Deno.test("relay reverse-forward: TCP reverse forwarding over relay circuit", as
         DIALER_SEED,
       ],
     );
-    await waitForLog("e2e-relay-rfwd-dialer", "reverse forward request accepted");
+    await waitForLog(
+      "e2e-relay-rfwd-dialer",
+      "reverse forward request accepted",
+    );
 
     // 5. Curl from inside the LISTENER container to the reverse-forwarded port
     const body = await dockerExec(

@@ -4,12 +4,14 @@ use std::str::FromStr;
 use color_eyre::eyre::Result;
 use inquire::validator::Validation;
 use inquire::{Confirm, InquireError, Select, Text};
-use libp2p::{core::multiaddr::Multiaddr, PeerId};
+use libp2p::PeerId;
+use libp2p::core::multiaddr::Multiaddr;
 
 use crate::cli;
 use crate::types::{DialTarget, ForwardSpec};
 
-// ── Suggestion constants ──────────────────────────────────────────────────────
+// ── Suggestion constants
+// ──────────────────────────────────────────────────────
 
 const MULTIADDR_SUGGESTIONS: &[&str] = &[
     "/ip4/",
@@ -38,7 +40,8 @@ fn prefix_suggest(
     }
 }
 
-// ── Mode enums ────────────────────────────────────────────────────────────────
+// ── Mode enums
+// ────────────────────────────────────────────────────────────────
 
 #[derive(Clone, Copy)]
 enum Mode {
@@ -123,14 +126,15 @@ impl fmt::Display for TunnelMode {
     }
 }
 
-// ── Public entry point ────────────────────────────────────────────────────────
+// ── Public entry point
+// ────────────────────────────────────────────────────────
 
 pub fn run_interactive() -> Result<cli::Command> {
     match run_interactive_inner() {
         Ok(cmd) => Ok(cmd),
         Err(InquireError::OperationCanceled | InquireError::OperationInterrupted) => {
             std::process::exit(0)
-        }
+        },
         Err(e) => Err(e.into()),
     }
 }
@@ -286,7 +290,7 @@ fn run_dial() -> Result<cli::Command, InquireError> {
                 .parse::<Multiaddr>()
                 .expect("validated above");
             (DialTarget::RelayCircuit(addr), None)
-        }
+        },
         DialConn::Mdns => {
             let peer_raw = Text::new("Peer ID")
                 .with_placeholder("12D3KooWH3uVF6wv47WnArKHk5p6cvgCJEb74UTmxztmQDc298L3")
@@ -312,7 +316,7 @@ fn run_dial() -> Result<cli::Command, InquireError> {
                 .prompt()?;
             let peer_id = PeerId::from_str(peer_raw.trim()).expect("validated above");
             (DialTarget::Mdns(peer_id), None)
-        }
+        },
         DialConn::Pairing => {
             let code_raw = Text::new("Pairing code")
                 .with_placeholder("42-river-ocean")
@@ -346,7 +350,7 @@ fn run_dial() -> Result<cli::Command, InquireError> {
                 DialTarget::PairingCode(code_raw.trim().to_string()),
                 Some(relay),
             )
-        }
+        },
     };
 
     let tunnel = Select::new(
@@ -379,7 +383,7 @@ fn run_dial() -> Result<cli::Command, InquireError> {
                 .prompt()?;
             let forward = ForwardSpec::from_str(forward_raw.trim()).expect("validated above");
             (Some(forward), None, None, false)
-        }
+        },
         TunnelMode::Reverse => {
             let forward_raw = Text::new("Forward spec")
                 .with_placeholder("9090:localhost:3000")
@@ -400,7 +404,7 @@ fn run_dial() -> Result<cli::Command, InquireError> {
                 .prompt()?;
             let forward = ForwardSpec::from_str(forward_raw.trim()).expect("validated above");
             (None, Some(forward), None, gateway_ports)
-        }
+        },
         TunnelMode::Socks => {
             let port_raw = Text::new("SOCKS5 port")
                 .with_placeholder("1080")
@@ -419,7 +423,7 @@ fn run_dial() -> Result<cli::Command, InquireError> {
                 port_raw.trim().parse::<u16>().expect("validated above")
             };
             (None, None, Some(port), false)
-        }
+        },
     };
 
     Ok(cli::Command::Dial(cli::DialOpt {

@@ -45,7 +45,8 @@ pub struct ListenOpt {
     pub identity_file: Option<std::path::PathBuf>,
     #[arg(long)]
     pub secret_key_seed: Option<u8>,
-    /// Restrict tunnel access to these peer IDs only. Can be specified multiple times.
+    /// Restrict tunnel access to these peer IDs only. Can be specified multiple
+    /// times.
     #[arg(long = "allowed-peer")]
     pub allowed_peers: Vec<libp2p::PeerId>,
 }
@@ -74,7 +75,8 @@ pub struct DialOpt {
     pub remote_forward: Option<ForwardSpec>,
     #[arg(short = 'D', long = "socks")]
     pub socks: Option<u16>,
-    /// Allow remote hosts to connect to -R forwarded ports (binds 0.0.0.0 instead of 127.0.0.1)
+    /// Allow remote hosts to connect to -R forwarded ports (binds 0.0.0.0
+    /// instead of 127.0.0.1)
     #[arg(short = 'g', long = "gateway-ports")]
     pub gateway_ports: bool,
 }
@@ -96,7 +98,7 @@ mod tests {
                 assert!(!opt.gateway_ports);
                 assert!(opt.local_forward.is_none());
                 assert!(opt.remote_forward.is_none());
-            }
+            },
             other => panic!("unexpected command: {other:?}"),
         }
     }
@@ -120,7 +122,7 @@ mod tests {
                 let reverse = opt.remote_forward.expect("remote-forward should be set");
                 assert_eq!(reverse.bind_port, 9090);
                 assert_eq!(reverse.target, "localhost:3000");
-            }
+            },
             other => panic!("unexpected command: {other:?}"),
         }
     }

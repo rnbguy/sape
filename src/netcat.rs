@@ -3,9 +3,9 @@ use std::io;
 use libp2p::Stream;
 use tokio::io::{join, stdin, stdout};
 use tokio_util::compat::FuturesAsyncReadCompatExt;
+use tracing::info;
 
 use crate::tunnel;
-use tracing::info;
 
 pub async fn run_netcat(stream: &mut Stream) -> io::Result<()> {
     let mut stdio = join(stdin(), stdout());

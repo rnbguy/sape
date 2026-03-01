@@ -31,8 +31,7 @@ Deno.test("relay netcat: bidirectional data over relay circuit", async () => {
     await waitForLog("e2e-relay-nc-relay", "relay listening address");
 
     // 2. Start listener with relay
-    const relayAddr =
-      `/dns4/e2e-relay-nc-relay/tcp/4001/p2p/${RELAY_PEER_ID}`;
+    const relayAddr = `/dns4/e2e-relay-nc-relay/tcp/4001/p2p/${RELAY_PEER_ID}`;
     await dockerRun("e2e-relay-nc-listener", [
       "listen",
       "--secret-key-seed",
@@ -43,8 +42,7 @@ Deno.test("relay netcat: bidirectional data over relay circuit", async () => {
     await waitForLog("e2e-relay-nc-listener", "Relay dial address:");
 
     // 3. Dialer sends a marker through netcat via relay circuit
-    const circuitAddr =
-      `${relayAddr}/p2p-circuit/p2p/${LISTENER_PEER_ID}`;
+    const circuitAddr = `${relayAddr}/p2p-circuit/p2p/${LISTENER_PEER_ID}`;
     const marker = `E2E_RELAY_NC_${Date.now()}`;
     await dockerRunInteractive(
       "e2e-relay-nc-dialer",
