@@ -4,7 +4,7 @@ use std::time::Duration;
 use color_eyre::eyre::{Result, WrapErr, bail, eyre};
 use futures::StreamExt;
 use libp2p::{
-    PeerId, Stream,
+    PeerId, Stream, StreamProtocol,
     core::multiaddr::{Multiaddr, Protocol},
     autonat, identify, noise, ping, relay, rendezvous,
     swarm::{NetworkBehaviour, SwarmEvent},
@@ -31,7 +31,12 @@ struct ServerBehaviour {
     stream: p2pstream::Behaviour,
 }
 
-pub async fn run_relay(opt: RelayOpt) -> Result<()> {
+pub async fn run_relay(
+    opt: RelayOpt,
+    tunnel_proto: StreamProtocol,
+    jump_proto: StreamProtocol,
+    namespace: &str,
+) -> Result<()> {
     let local_key = resolve_identity(opt.identity_file.as_deref(), opt.secret_key_seed)?;
     let relay_peer_id = local_key.public().to_peer_id();
 
@@ -51,7 +56,7 @@ pub async fn run_relay(opt: RelayOpt) -> Result<()> {
             ping: ping::Behaviour::new(ping::Config::new()),
             identify: identify::Behaviour::new(
                 identify::Config::new(
-                    crate::protocol::relay_identify_protocol(crate::protocol::DEFAULT_NAMESPACE),
+                    crate::protocol::relay_identify_protocol(namespace),
                     key.public(),
                 )
                 .with_agent_version(format!("sape/{}", env!("CARGO_PKG_VERSION"))),
@@ -66,7 +71,7 @@ pub async fn run_relay(opt: RelayOpt) -> Result<()> {
         .behaviour_mut()
         .stream
         .new_control()
-        .accept(crate::protocol::jump_protocol(crate::protocol::DEFAULT_NAMESPACE))
+        .accept(jump_proto.clone())
         .wrap_err("failed to set jump stream accept protocol")?;
     let open_control = swarm.behaviour_mut().stream.new_control();
 
@@ -104,12 +109,19 @@ pub async fn run_relay(opt: RelayOpt) -> Result<()> {
 
     let dial_tx_clone = dial_tx.clone();
     let open_control_clone = open_control.clone();
+    let tunnel_proto_clone = tunnel_proto.clone();
+    let jump_proto_clone = jump_proto.clone();
     tokio::spawn(async move {
         while let Some((peer, stream)) = incoming_jump.next().await {
             let dial_tx = dial_tx_clone.clone();
             let open_control = open_control_clone.clone();
+            let tunnel_proto = tunnel_proto_clone.clone();
+            let jump_proto = jump_proto_clone.clone();
             tokio::spawn(async move {
-                if let Err(err) = handle_jump_request(peer, stream, dial_tx, open_control).await {
+                if let Err(err) =
+                    handle_jump_request(peer, stream, dial_tx, open_control, tunnel_proto, jump_proto)
+                        .await
+                {
                     warn!(%peer, %err, "jump request failed");
                 }
             });
@@ -172,6 +184,8 @@ async fn handle_jump_request(
     mut inbound: Stream,
     dial_tx: mpsc::Sender<SwarmCommand>,
     mut open_control: p2pstream::Control,
+    tunnel_proto: StreamProtocol,
+    jump_proto: StreamProtocol,
 ) -> Result<()> {
     let chain = jump::read_jump_chain(&mut inbound)
         .await
@@ -202,9 +216,9 @@ async fn handle_jump_request(
 
     let remaining_hops = chain.hops[1..].to_vec();
     let outbound_protocol = if remaining_hops.is_empty() {
-        crate::protocol::tunnel_protocol(crate::protocol::DEFAULT_NAMESPACE)
+        tunnel_proto
     } else {
-        crate::protocol::jump_protocol(crate::protocol::DEFAULT_NAMESPACE)
+        jump_proto
     };
 
     let mut outbound = None;

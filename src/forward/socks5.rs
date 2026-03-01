@@ -3,7 +3,7 @@ use std::net::{IpAddr, Ipv4Addr, SocketAddr};
 use color_eyre::eyre::{self, WrapErr};
 use fast_socks5::server::Socks5ServerProtocol;
 use fast_socks5::Socks5Command;
-use libp2p::PeerId;
+use libp2p::{PeerId, StreamProtocol};
 use libp2p_stream as p2pstream;
 use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
 use tokio::net::{TcpListener, TcpStream};
@@ -17,6 +17,7 @@ pub async fn run_socks5(
     control: p2pstream::Control,
     remote_peer: PeerId,
     bind_port: u16,
+    protocol: StreamProtocol,
 ) -> eyre::Result<()> {
     let addr = SocketAddr::new(Ipv4Addr::LOCALHOST.into(), bind_port);
     let listener = TcpListener::bind(addr)
@@ -27,6 +28,7 @@ pub async fn run_socks5(
     loop {
         let (socket, peer_addr) = listener.accept().await?;
         let control = control.clone();
+        let protocol = protocol.clone();
 
         tokio::spawn(async move {
             // Peek first byte to detect protocol
@@ -37,8 +39,8 @@ pub async fn run_socks5(
             }
 
             let result = match peek_buf[0] {
-                0x05 => handle_socks5_client(socket, control, remote_peer).await,
-                b'C' => handle_http_connect(socket, control, remote_peer).await,
+                0x05 => handle_socks5_client(socket, control, remote_peer, protocol.clone()).await,
+                b'C' => handle_http_connect(socket, control, remote_peer, protocol).await,
                 other => {
                     warn!(%peer_addr, first_byte = other, "unknown proxy protocol, expected SOCKS5 or HTTP CONNECT");
                     Ok(())
@@ -56,6 +58,7 @@ async fn handle_socks5_client(
     socket: TcpStream,
     control: p2pstream::Control,
     remote_peer: PeerId,
+    protocol: StreamProtocol,
 ) -> eyre::Result<()> {
     let proto = Socks5ServerProtocol::accept_no_auth(socket).await.map_err(|e| eyre::eyre!(e))?;
     let (proto, cmd, target_addr) = proto.read_command().await.map_err(|e| eyre::eyre!(e))?;
@@ -63,7 +66,9 @@ async fn handle_socks5_client(
     let target = target_addr.to_string();
     info!(%target, "socks5 connecting");
 
-    let mut stream = open_stream(control, remote_peer, crate::protocol::tunnel_protocol(crate::protocol::DEFAULT_NAMESPACE)).await.wrap_err("p2p tunnel broken, cannot open stream for socks5")?;
+    let mut stream = open_stream(control, remote_peer, protocol)
+        .await
+        .wrap_err("p2p tunnel broken, cannot open stream for socks5")?;
     tunnel::write_tunnel_request(&mut stream, &TunnelRequest::LocalForward { target: target.clone() })
         .await
         .wrap_err("failed to send socks5 tunnel request")?;
@@ -80,6 +85,7 @@ async fn handle_http_connect(
     mut socket: TcpStream,
     control: p2pstream::Control,
     remote_peer: PeerId,
+    protocol: StreamProtocol,
 ) -> eyre::Result<()> {
     // Read request line + headers
     let target = {
@@ -110,7 +116,7 @@ async fn handle_http_connect(
     
     info!(%target, "http-connect proxying");
     
-    let mut stream = open_stream(control, remote_peer, crate::protocol::tunnel_protocol(crate::protocol::DEFAULT_NAMESPACE))
+    let mut stream = open_stream(control, remote_peer, protocol)
         .await
         .wrap_err("p2p tunnel broken, cannot open stream for http-connect")?;
     tunnel::write_tunnel_request(

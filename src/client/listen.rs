@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use color_eyre::eyre::{Result, WrapErr, bail, eyre};
 use futures::StreamExt;
-use libp2p::{core::multiaddr::Protocol, rendezvous};
+use libp2p::{StreamProtocol, core::multiaddr::Protocol, rendezvous};
 use tracing::{error, info, warn};
 
 use crate::{
@@ -14,7 +14,7 @@ use crate::{
 use super::{build_client_swarm, start_listeners};
 use super::swarm::{connect_and_identify, drive_client_swarm};
 
-pub async fn run_listen(opt: ListenOpt) -> Result<()> {
+pub async fn run_listen(opt: ListenOpt, tunnel_proto: StreamProtocol, namespace: &str) -> Result<()> {
     if let Some(ref addr) = opt.relay_address {
         validate_relay_address(addr)
             .wrap_err_with(|| format!("invalid --relay-address '{addr}'"))?;
@@ -23,7 +23,7 @@ pub async fn run_listen(opt: ListenOpt) -> Result<()> {
     let local_key = resolve_identity(opt.identity_file.as_deref(), opt.secret_key_seed)?;
     let local_peer_id = local_key.public().to_peer_id();
 
-    let mut swarm = build_client_swarm(local_key).await?;
+    let mut swarm = build_client_swarm(local_key, namespace).await?;
 
     // Always start TCP+QUIC listeners (needed for mDNS direct connections)
     start_listeners(&mut swarm)?;
@@ -67,7 +67,7 @@ pub async fn run_listen(opt: ListenOpt) -> Result<()> {
         .behaviour_mut()
         .stream
         .new_control()
-        .accept(crate::protocol::tunnel_protocol(crate::protocol::DEFAULT_NAMESPACE))
+        .accept(tunnel_proto.clone())
         .wrap_err("failed to set stream accept protocol")?;
 
     let open_control = swarm.behaviour_mut().stream.new_control();
@@ -91,6 +91,7 @@ pub async fn run_listen(opt: ListenOpt) -> Result<()> {
                 };
                 let open_control = open_control.clone();
                 let allowed_peers = Arc::clone(&allowed_peers);
+                let tunnel_proto = tunnel_proto.clone();
                 tokio::spawn(async move {
                     if !allowed_peers.is_empty() && !allowed_peers.contains(&peer) {
                         warn!(%peer, "rejected tunnel request from unauthorized peer");
@@ -127,6 +128,7 @@ pub async fn run_listen(opt: ListenOpt) -> Result<()> {
                                 bind_port,
                                 Arc::from(target.as_str()),
                                 gateway_ports,
+                                tunnel_proto,
                             )
                             .await;
 

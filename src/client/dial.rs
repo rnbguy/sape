@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
 use color_eyre::eyre::{Result, WrapErr, bail, eyre};
-use libp2p::rendezvous;
+use libp2p::{StreamProtocol, rendezvous};
 use tracing::{error, info};
 
 use crate::{
@@ -15,13 +15,18 @@ use super::swarm::{
     wait_for_mdns_and_connect, wait_for_peer_connection, wait_for_rendezvous_discovery,
 };
 
-pub async fn run_dial(opt: DialOpt) -> Result<()> {
+pub async fn run_dial(
+    opt: DialOpt,
+    tunnel_proto: StreamProtocol,
+    jump_proto: StreamProtocol,
+    namespace: &str,
+) -> Result<()> {
     let mode = parse_dial_mode(&opt);
     let relay_address_opt = opt.relay_address.clone();
 
     let local_key = resolve_identity(opt.identity_file.as_deref(), opt.secret_key_seed)?;
 
-    let mut swarm = build_client_swarm(local_key).await?;
+    let mut swarm = build_client_swarm(local_key, namespace).await?;
     start_listeners(&mut swarm)?;
 
     if !opt.jump.is_empty() {
@@ -53,7 +58,7 @@ pub async fn run_dial(opt: DialOpt) -> Result<()> {
         });
 
         let mut jump_stream = open_control
-            .open_stream(first_peer, crate::protocol::jump_protocol(crate::protocol::DEFAULT_NAMESPACE))
+            .open_stream(first_peer, jump_proto.clone())
             .await
             .map_err(|err| eyre!("failed to open jump stream: {err}"))?;
 
@@ -135,7 +140,7 @@ pub async fn run_dial(opt: DialOpt) -> Result<()> {
         .behaviour_mut()
         .stream
         .new_control()
-        .accept(crate::protocol::tunnel_protocol(crate::protocol::DEFAULT_NAMESPACE))
+        .accept(tunnel_proto.clone())
         .wrap_err("failed to set stream accept protocol")?;
 
     tokio::spawn(async move {
@@ -146,12 +151,14 @@ pub async fn run_dial(opt: DialOpt) -> Result<()> {
 
     match mode {
         DialMode::Netcat => {
-            let mut stream = forward::open_stream(control, remote_peer_id, crate::protocol::tunnel_protocol(crate::protocol::DEFAULT_NAMESPACE)).await?;
+            let mut stream =
+                forward::open_stream(control, remote_peer_id, tunnel_proto.clone()).await?;
             tunnel::write_tunnel_request(&mut stream, &TunnelRequest::Netcat).await?;
             netcat::run_netcat(&mut stream).await?;
         }
         DialMode::LocalForward { bind_port, target } => {
-            forward::run_local_forward(control, remote_peer_id, bind_port, target).await?;
+            forward::run_local_forward(control, remote_peer_id, bind_port, target, tunnel_proto)
+                .await?;
         }
         DialMode::ReverseForward { bind_port, target, gateway_ports } => {
             forward::request_reverse_forward(
@@ -160,13 +167,14 @@ pub async fn run_dial(opt: DialOpt) -> Result<()> {
                 bind_port,
                 target.to_string(),
                 gateway_ports,
+                tunnel_proto,
             )
             .await?;
 
             forward::run_incoming_reverse_handler(incoming).await?;
         }
         DialMode::Socks5 { bind_port } => {
-            forward::run_socks5(control, remote_peer_id, bind_port).await?;
+            forward::run_socks5(control, remote_peer_id, bind_port, tunnel_proto).await?;
         }
     }
 

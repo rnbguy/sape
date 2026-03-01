@@ -9,6 +9,7 @@ use super::ClientBehaviour;
 
 pub(crate) async fn build_client_swarm(
     keypair: libp2p::identity::Keypair,
+    namespace: &str,
 ) -> Result<libp2p::Swarm<ClientBehaviour>> {
     let peer_id = keypair.public().to_peer_id();
     let swarm = libp2p::SwarmBuilder::with_existing_identity(keypair)
@@ -30,7 +31,7 @@ pub(crate) async fn build_client_swarm(
             ),
             identify: identify::Behaviour::new(
                 identify::Config::new(
-                    crate::protocol::client_identify_protocol(crate::protocol::DEFAULT_NAMESPACE),
+                    crate::protocol::client_identify_protocol(namespace),
                     keypair.public(),
                 )
                 .with_agent_version(format!("sape/{}", env!("CARGO_PKG_VERSION"))),

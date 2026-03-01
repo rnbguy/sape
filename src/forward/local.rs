@@ -4,7 +4,7 @@ use std::{
 };
 
 use color_eyre::eyre::{self, WrapErr};
-use libp2p::{PeerId, Stream};
+use libp2p::{PeerId, Stream, StreamProtocol};
 use libp2p_stream as p2pstream;
 use tokio::net::{TcpListener, TcpStream};
 use tokio_util::compat::FuturesAsyncReadCompatExt;
@@ -18,6 +18,7 @@ pub async fn run_local_forward(
     remote_peer: PeerId,
     bind_port: u16,
     target: Arc<str>,
+    protocol: StreamProtocol,
 ) -> eyre::Result<()> {
     let addr = SocketAddr::new(Ipv4Addr::LOCALHOST.into(), bind_port);
     let listener = TcpListener::bind(addr)
@@ -29,9 +30,10 @@ pub async fn run_local_forward(
         let (mut inbound, peer_addr) = listener.accept().await?;
         let control = control.clone();
         let target = Arc::clone(&target);
+        let protocol = protocol.clone();
 
         tokio::spawn(async move {
-            let mut stream = match open_stream(control, remote_peer, crate::protocol::tunnel_protocol(crate::protocol::DEFAULT_NAMESPACE)).await {
+            let mut stream = match open_stream(control, remote_peer, protocol).await {
                 Ok(s) => s,
                 Err(err) => {
                     error!(%peer_addr, %err, "cannot open p2p stream for local-forward");

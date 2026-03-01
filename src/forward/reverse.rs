@@ -7,7 +7,7 @@ use std::{
 use color_eyre::eyre::{self, WrapErr};
 use futures::StreamExt;
 use futures::io::AsyncReadExt as _;
-use libp2p::PeerId;
+use libp2p::{PeerId, StreamProtocol};
 use libp2p_stream as p2pstream;
 use tokio::net::TcpListener;
 use tokio_util::compat::FuturesAsyncReadCompatExt;
@@ -22,6 +22,7 @@ pub async fn start_reverse_listener(
     bind_port: u16,
     target: Arc<str>,
     gateway_ports: bool,
+    protocol: StreamProtocol,
 ) -> eyre::Result<()> {
     let bind_ip = if gateway_ports { Ipv4Addr::UNSPECIFIED } else { Ipv4Addr::LOCALHOST };
     let bind_addr = SocketAddr::new(bind_ip.into(), bind_port);
@@ -43,9 +44,10 @@ pub async fn start_reverse_listener(
 
             let target = Arc::clone(&target);
             let control = control.clone();
+            let protocol = protocol.clone();
 
             tokio::spawn(async move {
-                let mut stream = match open_stream(control, remote_peer, crate::protocol::tunnel_protocol(crate::protocol::DEFAULT_NAMESPACE)).await {
+                let mut stream = match open_stream(control, remote_peer, protocol).await {
                     Ok(s) => s,
                     Err(err) => {
                         error!(%peer_addr, %err, "cannot open p2p stream for reverse-forward");
@@ -82,12 +84,10 @@ pub async fn request_reverse_forward(
     bind_port: u16,
     target: String,
     gateway_ports: bool,
+    protocol: StreamProtocol,
 ) -> eyre::Result<()> {
     let mut stream = control
-        .open_stream(
-            remote_peer,
-            crate::protocol::tunnel_protocol(crate::protocol::DEFAULT_NAMESPACE),
-        )
+        .open_stream(remote_peer, protocol)
         .await
         .map_err(|err| io::Error::other(err.to_string()))
         .wrap_err("failed to open p2p stream for reverse-forward request")?;
