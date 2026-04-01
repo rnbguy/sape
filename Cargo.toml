@@ -16,7 +16,7 @@ postcard           = { version = "1.1", features = [ "alloc" ] }
 rand               = { version = "0.10" }
 serde              = { version = "1", features = [ "derive" ] }
 thiserror          = { version = "2" }
-tokio              = { version = "1.49", features = [ "io-std", "io-util", "macros", "net", "rt-multi-thread", "signal", "time" ] }
+tokio              = { version = "1.50", features = [ "io-std", "io-util", "macros", "net", "rt-multi-thread", "signal", "time" ] }
 tokio-util         = { version = "0.7", features = [ "compat" ] }
 tracing            = { version = "0.1" }
 tracing-subscriber = { version = "0.3", features = [ "env-filter" ] }
